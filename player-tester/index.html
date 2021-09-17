@@ -18,6 +18,19 @@
           videoElement
         });
 
+        const getBandwidth = async () => {
+          fetch("http://localhost:5000/bandwidth").then((response) => response.json()).then((network) => {
+            bandwidth.push({
+              y: network.bandwidth.rate,
+              x: Date.now()
+            })
+            latency.push({
+              y: network.latency.latency + network.latency.jitter/2,
+              x: Date.now()
+            })
+          })
+        }
+
         player.loadVideo({
           url: "http://localhost:5001/videos/BigBuckBunny/2sec/BigBuckBunny_2s_simple_2014_05_09.mpd",
           transport: "dash",
@@ -39,20 +52,12 @@
         });
 
         setInterval(async () => {
-          fetch("http://localhost:5000/bandwidth").then((response) => response.json()).then((network) => {
-            bandwidth.push({
-              y: network.bandwidth.rate,
-              x: Date.now()
-            })
-            latency.push({
-              y: network.latency.latency + network.latency.jitter/2,
-              x: Date.now()
-            })
-          })
+          await getBandwidth()
         }, 1000)
 
-        player.addEventListener("playerStateChange", (state) => {
+        player.addEventListener("playerStateChange", async (state) => {
           if (state === "LOADED") {
+            await getBandwidth()
             videoElement.onclick = function() {
               if (player.getPlayerState() === "PLAYING") {
                 player.pause();
@@ -62,7 +67,6 @@
             };
           }
           else if (state === "PLAYING"){
-            console.log(videoBitrate)
             fetch("http://localhost:5000/report",
               {
                   headers: {
