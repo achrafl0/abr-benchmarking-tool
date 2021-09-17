@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tests network</title>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data.js""></script>
+    <div>
+      <canvas id="myChart"></canvas>
+    </div>
+    <script charset="utf-8">
+      console.log(dataset)
+      const formatTime = (data) => {
+        return data.map(({x, y}) => {
+          return {
+            y,
+            x: new Date(x * 1000).toLocaleTimeString()
+          }
+        })
+      }
+      const audioSet = {
+        label: 'AudioBitRate',
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgb(255, 99, 132)',
+        data: formatTime(dataset.audioBitrate), 
+        stepped: true,
+      }
+      const videoSet = {
+        label: 'VideoBitRate',
+        borderColor: 'cyan',
+        backgroundColor: 'cyan',
+        data: formatTime(dataset.videoBitrate), 
+        stepped: true,
+      }
+      const bandwidthSet = {
+        label: 'Bandwidth (kb/s)',
+        borderColor: 'green',
+        backgroundColor: 'green',
+        data: formatTime(dataset.bandwidth), 
+        stepped: true,
+      }
+      const latencySet = {
+        label: 'Latency (ms)',
+        borderColor: 'yellow',
+        backgroundColor: 'yellow',
+        data: formatTime(dataset.latency),
+        stepped: true
+      }
+
+      const config = {
+        type: 'line',
+        data: { datasets: [videoSet, audioSet, bandwidthSet, latencySet] },
+        options: {
+          scales: {
+            xAxes: [{
+              type: 'time'
+            }]
+          }
+        }
+      };
+      var myChart = new Chart(document.getElementById("myChart"), config);
+    </script>
+  </body>
+</html>
