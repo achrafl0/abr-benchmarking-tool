@@ -1,0 +1,21 @@
+{
+  "name": "player-tester",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "build": "parcel index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dashjs": "^4.1.0",
+    "player-inspector": "git+https://github.com/peaberberian/player-inspector.git",
+    "rx-player": "^3.26.1",
+    "shaka-player": "^3.2.0"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5"
+  }
+}
