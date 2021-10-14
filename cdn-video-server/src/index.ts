@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import toxiproxyRouter from "./toxiproxyRouter";
-import reportingRouter from "./reportingRouter"
 import {
   CDN_PORT,
   toxiproxyClient,
@@ -29,7 +28,6 @@ app.use(
 );
 
 app.use(toxiproxyRouter)
-app.use(reportingRouter)
 app.listen(CDN_PORT, () => {
   console.log(`The videoserver is listening on port ${CDN_PORT} !`);
   toxiproxyClient

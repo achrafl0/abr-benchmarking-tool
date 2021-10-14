@@ -67,7 +67,10 @@ export const TestScenarios: IScenario[] = [
     },
     {
         id: "adsl-network",
-        latency: DEFAULT_LATENCY,
+        latency: {
+            jitter: 200,
+            latency: 500,
+        },
         bandwidth: {
             rate: 500
         }

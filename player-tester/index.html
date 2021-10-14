@@ -8,86 +8,11 @@
     <body>
       <video id="video"></video>
       <script type="text/javascript" src="./rx-player.js" charset="utf-8"></script>
-      <script charset="utf-8">
-        const videoElement = document.getElementById("video");
-        const audioBitrate = []
-        const videoBitrate = []
-        const bandwidth = []
-        const latency = []
-        const player = new window.RxPlayer({
-          videoElement
-        });
-
-        const getBandwidth = async () => {
-          fetch("http://localhost:5000/bandwidth").then((response) => response.json()).then((network) => {
-            bandwidth.push({
-              y: network.bandwidth.rate,
-              x: Date.now()
-            })
-            latency.push({
-              y: network.latency.latency + network.latency.jitter/2,
-              x: Date.now()
-            })
-          })
-        }
-
-        player.loadVideo({
-          url: "http://localhost:5001/videos/BigBuckBunny/2sec/BigBuckBunny_2s_simple_2014_05_09.mpd",
-          transport: "dash",
-          autoPlay: true,
-        });
-
-        player.addEventListener("audioBitrateChange", (bit) => {
-          audioBitrate.push({
-            y: bit,
-            x: Date.now()
-          })
-        });
-
-        player.addEventListener("videoBitrateChange", (bit) => {
-          videoBitrate.push({
-            y: bit,
-            x: Date.now()
-          })
-        });
-
-        setInterval(async () => {
-          await getBandwidth()
-        }, 1000)
-
-        player.addEventListener("playerStateChange", async (state) => {
-          if (state === "LOADED") {
-            await getBandwidth()
-            videoElement.onclick = function() {
-              if (player.getPlayerState() === "PLAYING") {
-                player.pause();
-              } else {
-                player.play();
-              }
-            };
-          }
-          else if (state === "PLAYING"){
-            fetch("http://localhost:5000/report",
-              {
-                  headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                  },
-                  method: "POST",
-                  body: JSON.stringify({
-                    videoBitrate,
-                    audioBitrate,
-                    bandwidth,
-                    latency
-                  })
-              })
-            .then(function(res){ console.log(res) })
-            .catch(function(res){ console.log(res) })
-          }
-        });
-
-        window.player = player;
-      </script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div>
+      <canvas id="myChart"></canvas>
+    </div>
+      <script src="setup.js"></script> 
     </body>
 
 </html>
