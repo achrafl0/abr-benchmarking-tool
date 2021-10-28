@@ -25,7 +25,11 @@ app.use((_req, res, next) => {
   next();
 });
 
-app.use("/proxy", proxy("https://www.bok.net/dash/tears_of_steel/cleartext/stream.mpd"))
+app.use("/proxy/:url", (req, res, next) => {
+  const url = req.originalUrl.substring(7)
+  console.log(url)
+  return proxy(url)(req, res, next)
+})
 
 app.use(
   "/videos",

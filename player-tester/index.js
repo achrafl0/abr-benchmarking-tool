@@ -1,8 +1,8 @@
 import { testRxplayer } from "./test-rx";
 //import { testDashJs } from "./test-dashjs";
 const videoElement = document.querySelector("video");
-const MPD_URL =
+const LOCAL_MPD_URL =
   "http://localhost:5001/videos/BigBuckBunny/2sec/BigBuckBunny_2s_simple_2014_05_09.mpd";
-
-testRxplayer(videoElement, MPD_URL)
+const PROXY_MPD_URL = "http://localhost:5001/proxy/dash/tears_of_steel/cleartext/stream.mpd"
+testRxplayer(videoElement, LOCAL_MPD_URL)
 //testDashJs(videoElement, MPD_URL)
