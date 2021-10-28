@@ -1,7 +1,6 @@
-const videoElement = document.getElementById("video");
-const player = new window.RxPlayer({
-  videoElement,
-});
+import { Chart, registerables } from "chart.js";
+Chart.register(...registerables);
+
 const formatTime = (data) => {
   return data.map(({ x, y }) => {
     return {
@@ -10,6 +9,7 @@ const formatTime = (data) => {
     };
   });
 };
+
 const audioSet = {
   label: "Audio Bitrate",
   yAxisID: "audioYAxis",
@@ -47,7 +47,7 @@ const latencySet = {
   yAxisID: "latencyYAxis",
 };
 
-const config = {
+export var config = {
   type: "line",
   data: { datasets: [videoSet, audioSet, bandwidthSet, latencySet] },
   options: {
@@ -123,68 +123,31 @@ const config = {
     },
   },
 };
-var myChart = new Chart(document.getElementById("myChart"), config);
 
-const getBandwidth = async () => {
-  fetch("http://localhost:5000/bandwidth")
-    .then((response) => response.json())
-    .then((network) => {
-      myChart.data.datasets[2].data = [
-        ...myChart.data.datasets[2].data,
-        {
-          y: network.bandwidth.rate,
-          x: new Date().toISOString(),
+export var myChart = new Chart(document.getElementById("myChart"), config);
 
-        },
-      ];
-      myChart.data.datasets[3].data = [
-        ...myChart.data.datasets[3].data,
-        {
-          y: network.latency.latency + network.latency.jitter / 2,
-          x: new Date.toISOString(),
-        },
-      ];
-      myChart.update();
-    });
+export const globalRegisterData = (
+  data,
+  index,
+  timestamp = new Date().toISOString()
+) => {
+  myChart.data.datasets[index].data = [
+    ...myChart.data.datasets[index].data,
+    { y: data, x: timestamp },
+  ];
+  myChart.update();
 };
-
-player.loadVideo({
-  url: "http://localhost:5001/videos/BigBuckBunny/2sec/BigBuckBunny_2s_simple_2014_05_09.mpd",
-  transport: "dash",
-  autoPlay: true,
-});
-
-player.addEventListener("audioBitrateChange", (bit) => {
-  myChart.data.datasets[1].data = [
-    ...myChart.data.datasets[1].data,
-    { y: bit, x: new Date().toISOString() },
-  ];
-  myChart.update();
-});
-
-player.addEventListener("videoBitrateChange", (bit) => {
-  myChart.data.datasets[0].data = [
-    ...myChart.data.datasets[0].data,
-    { y: bit, x: new Date().toISOString() },
-  ];
-  myChart.update();
-});
-
-setInterval(async () => {
-  await getBandwidth();
-}, 1000);
-
-player.addEventListener("playerStateChange", async (state) => {
-  if (state === "LOADED") {
-    await getBandwidth();
-    videoElement.onclick = function () {
-      if (player.getPlayerState() === "PLAYING") {
-        player.pause();
-      } else {
-        player.play();
-      }
-    };
-  }
-});
-
-window.player = player;
+export const registerEvent = {
+  audioBitrate: (bit) => {
+    globalRegisterData(bit, 1);
+  },
+  videoBitrate: (bit) => {
+    globalRegisterData(bit, 0);
+  },
+  latency: (latency) => {
+    globalRegisterData(latency, 3);
+  },
+  bandwidth: (bandwidth) => {
+    globalRegisterData(bandwidth, 2);
+  },
+};
