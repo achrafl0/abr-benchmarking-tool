@@ -7,6 +7,8 @@ import {
   TOXIPROXY_PORT,
   PROXY_NAME,
 } from "./config";
+import proxy from "express-http-proxy"
+
 const app = express();
 app.use(express.json())
 app.use((_req, res, next) => {
@@ -22,6 +24,9 @@ app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   next();
 });
+
+app.use("/proxy", proxy("https://www.bok.net/dash/tears_of_steel/cleartext/stream.mpd"))
+
 app.use(
   "/videos",
   express.static(path.join(__dirname, "..", "static", "videos"))

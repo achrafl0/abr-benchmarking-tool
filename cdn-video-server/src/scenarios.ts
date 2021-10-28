@@ -74,6 +74,16 @@ export const TestScenarios: IScenario[] = [
         bandwidth: {
             rate: 500
         }
+    },
+    {
+	id: "bad-network",
+	latency: {
+		jitter: 300,
+		latency: 1500,
+	},
+	bandwidth: {
+		rate: 500
+	}
     }
 ]
 

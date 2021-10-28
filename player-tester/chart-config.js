@@ -46,10 +46,19 @@ const latencySet = {
   fill: false,
   yAxisID: "latencyYAxis",
 };
+const bufferSizeSet = {
+  label: "Buffer size (s)",
+  borderColor: "#4DFF00",
+  backgroundColor: "white",
+  data: [],
+  stepped: "before",
+  fill: true,
+  yAxisID: "bufferSizeYAxis"
+}
 
 export var config = {
   type: "line",
-  data: { datasets: [videoSet, audioSet, bandwidthSet, latencySet] },
+  data: { datasets: [videoSet, audioSet, bandwidthSet, latencySet, bufferSizeSet] },
   options: {
     scales: {
       audioYAxis: {
@@ -110,13 +119,43 @@ export var config = {
           display: false,
         },
       },
+      bufferSizeYAxis: {
+        title: {
+          display: true,
+          text: "Buffer Size",
+        },
+        type: "linear",
+        position: "left",
+        min: 0,
+        max: 180,
+        ticks: {
+          color: (x) => "#4DFF00",
+          callback: function (value, index, values) {
+            return value + " s";
+          },
+        },
+      },
+      xAxis: {
+        title: {
+          display: true,
+          text: "Time"
+        },
+        type: "linear",
+        min: 0,
+        ticks: {
+          color: (x) => "black",
+          callback: function (value, index, values) {
+            return value + " s";
+          },
+        } 
+      }
     },
     elements: {
       line: {
-        tension: 0, // disables bezier curves
+        tension: 10, // disables bezier curves
       },
       point: {
-        radius: 4,
+        radius: 1,
         borderWidth: 2,
         pointStyle: "circle",
       },
@@ -129,25 +168,46 @@ export var myChart = new Chart(document.getElementById("myChart"), config);
 export const globalRegisterData = (
   data,
   index,
-  timestamp = new Date().toISOString()
+  startTime
 ) => {
+  const deltaTime = (performance.now() - startTime) / 1000
+
   myChart.data.datasets[index].data = [
     ...myChart.data.datasets[index].data,
-    { y: data, x: timestamp },
+    { y: data, x: deltaTime },
   ];
   myChart.update();
 };
 export const registerEvent = {
-  audioBitrate: (bit) => {
-    globalRegisterData(bit, 1);
+  audioBitrate: (bit, startTime) => {
+    globalRegisterData(bit, 1, startTime);
   },
-  videoBitrate: (bit) => {
-    globalRegisterData(bit, 0);
+  videoBitrate: (bit, startTime) => {
+    globalRegisterData(bit, 0, startTime);
   },
-  latency: (latency) => {
-    globalRegisterData(latency, 3);
+  latency: (latency, startTime) => {
+    globalRegisterData(latency, 3, startTime);
   },
-  bandwidth: (bandwidth) => {
-    globalRegisterData(bandwidth, 2);
+  bandwidth: (bandwidth, startTime) => {
+    globalRegisterData(bandwidth, 2, startTime);
   },
+  bufferSize: (buffersize, startTime) => {
+    globalRegisterData(buffersize, 4, startTime)
+  }
 };
+
+export const dumpData = () => {
+  return myChart.data.datasets.map((dataset)=> dataset.data)
+}
+
+export const isVideoBitrateConstantSince = (startTime, since = 5) => {
+  var videoData = myChart.data.datasets[0].data
+  var lastBitrateTime = videoData[videoData.length - 1].x
+  return (performance.now() - startTime)/1000 - since > lastBitrateTime
+}
+
+export const cheatVideoData = (startTime) => {
+  var videoData = myChart.data.datasets[0].data
+  var lastBitrate = videoData[videoData.length - 1].y
+  registerEvent.videoBitrate(lastBitrate, startTime)
+}
