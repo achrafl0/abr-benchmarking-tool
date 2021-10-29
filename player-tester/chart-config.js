@@ -1,6 +1,15 @@
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
+/** Interval at which the Chart is refreshed. */
+const CHART_UPDATING_INTERVAL = 1000;
+
+/** If `true`, the Chart is currently updating at regular interval. */
+let chartIsUpdating = false;
+
+/** Contains the chart updates interval id, allowing to clear it to stop it. */
+let chartUpdatingIntervalId;
+
 const formatTime = (data) => {
   return data.map(({ x, y }) => {
     return {
@@ -179,8 +188,27 @@ export const globalRegisterData = (
     ...myChart.data.datasets[index].data,
     { y: data, x: deltaTime },
   ];
-  myChart.update();
+  if (!chartIsUpdating) {
+    startUpdatingChart();
+  }
 };
+
+function stopUpdatingChart() {
+  clearTimeout(chartUpdatingIntervalId);
+  chartIsUpdating = false;
+}
+
+function startUpdatingChart() {
+  if (chartIsUpdating) {
+    stopUpdatingChart();
+  }
+  myChart.update();
+  chartUpdatingIntervalId = setInterval(() => {
+    myChart.update();
+  }, CHART_UPDATING_INTERVAL);
+  chartIsUpdating = true;
+}
+
 export const registerEvent = {
   audioBitrate: (bit, startTime) => {
     globalRegisterData(bit, 1, startTime);
