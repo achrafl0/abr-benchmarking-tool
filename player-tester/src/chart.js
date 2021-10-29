@@ -1,5 +1,10 @@
-import { Chart, registerables } from "chart.js";
-Chart.register(...registerables);
+import {
+  Chart,
+  registerables,
+} from "chart.js";
+
+/** Chart.js's chart once it has been initialized. */
+let chart = null;
 
 /** Interval at which the Chart is refreshed. */
 const CHART_UPDATING_INTERVAL = 1000;
@@ -10,14 +15,11 @@ let chartIsUpdating = false;
 /** Contains the chart updates interval id, allowing to clear it to stop it. */
 let chartUpdatingIntervalId;
 
-const formatTime = (data) => {
-  return data.map(({ x, y }) => {
-    return {
-      y,
-      x: new Date(x).toISOString(),
-    };
-  });
-};
+/**
+ * The starting time reference, in terms of `performance.now` which will
+ * constitute the time origin of every measure.
+ */
+let timeRef = 0;
 
 const audioSet = {
   label: "Audio Bitrate",
@@ -65,7 +67,7 @@ const bufferSizeSet = {
   yAxisID: "bufferSizeYAxis"
 }
 
-export var config = {
+const config = {
   type: "line",
   data: { datasets: [videoSet, audioSet, bandwidthSet, latencySet, bufferSizeSet] },
   options: {
@@ -81,7 +83,7 @@ export var config = {
         max: 1000,
         ticks: {
           color: "#ffbaa2",
-          callback: function (value, index, values) {
+          callback: function (value, _index, _values) {
             return value + " kbit/s";
           },
         },
@@ -94,7 +96,7 @@ export var config = {
         max: 4500000,
         ticks: {
           color: "#91cf96",
-          callback: function (value, index, values) {
+          callback: function (value, _index, _values) {
             return value + " kbit/s";
           },
         },
@@ -107,7 +109,7 @@ export var config = {
         max: 25000,
         ticks: {
           color: "#c881d2",
-          callback: function (value, index, values) {
+          callback: function (value, _index, _values) {
             return value + " kbit/s";
           },
         },
@@ -122,8 +124,8 @@ export var config = {
         min: 0,
         max: 1500,
         ticks: {
-          color: (x) => "#29b6f6",
-          callback: function (value, index, values) {
+          color: (_x) => "#29b6f6",
+          callback: function (value, _index, _values) {
             return value + " ms";
           },
         },
@@ -141,8 +143,8 @@ export var config = {
         min: 0,
         max: 180,
         ticks: {
-          color: (x) => "#4DFF00",
-          callback: function (value, index, values) {
+          color: (_x) => "#4DFF00",
+          callback: function (value, _index, _values) {
             return value + " s";
           },
         },
@@ -155,11 +157,11 @@ export var config = {
         type: "linear",
         min: 0,
         ticks: {
-          color: (x) => "black",
-          callback: function (value, index, values) {
+          color: (_x) => "black",
+          callback: function (value, _index, _values) {
             return value + " s";
           },
-        } 
+        }
       }
     },
     elements: {
@@ -175,70 +177,86 @@ export var config = {
   },
 };
 
-export var myChart = new Chart(document.getElementById("myChart"), config);
+export default function initializeChart() {
+  Chart.register(...registerables);
+  chart = new Chart(document.getElementById("chart"), config);
+  timeRef = performance.now();
+}
 
-export const globalRegisterData = (
-  data,
-  index,
-  startTime
-) => {
-  const deltaTime = (performance.now() - startTime) / 1000
+export const registerEvent = {
+  audioBitrate: (bit) => {
+    internalRegisterData(bit, 1);
+  },
+  videoBitrate: (bit) => {
+    internalRegisterData(bit, 0);
+  },
+  latency: (latency) => {
+    internalRegisterData(latency, 3);
+  },
+  bandwidth: (bandwidth) => {
+    internalRegisterData(bandwidth, 2);
+  },
+  bufferSize: (buffersize) => {
+    internalRegisterData(buffersize, 4)
+  }
+};
 
-  myChart.data.datasets[index].data = [
-    ...myChart.data.datasets[index].data,
+/**
+ * Register new data in the chart.
+ * @param {number} data - the data point itself
+ * @param {number} index - index identifying the type of data.
+ */
+function internalRegisterData(data, index) {
+  if (chart === null) {
+    throw new Error("Chart not initialized");
+  }
+  const deltaTime = (performance.now() - timeRef) / 1000
+
+  chart.data.datasets[index].data = [
+    ...chart.data.datasets[index].data,
     { y: data, x: deltaTime },
   ];
   if (!chartIsUpdating) {
-    startUpdatingChart();
+    startUpdatingChart(timeRef);
   }
 };
+
+function startUpdatingChart() {
+  if (chartIsUpdating) {
+    stopUpdatingChart();
+  }
+  chart.update();
+  chartUpdatingIntervalId = setInterval(() => {
+    if (isVideoBitrateConstant()) {
+      repeatLastVideoBitrateEvent();
+    }
+    chart.update();
+  }, CHART_UPDATING_INTERVAL);
+  chartIsUpdating = true;
+}
 
 function stopUpdatingChart() {
   clearTimeout(chartUpdatingIntervalId);
   chartIsUpdating = false;
 }
 
-function startUpdatingChart() {
-  if (chartIsUpdating) {
-    stopUpdatingChart();
+function isVideoBitrateConstant() {
+  if (chart.data.datasets.length === 0) {
+    return false;
   }
-  myChart.update();
-  chartUpdatingIntervalId = setInterval(() => {
-    myChart.update();
-  }, CHART_UPDATING_INTERVAL);
-  chartIsUpdating = true;
-}
-
-export const registerEvent = {
-  audioBitrate: (bit, startTime) => {
-    globalRegisterData(bit, 1, startTime);
-  },
-  videoBitrate: (bit, startTime) => {
-    globalRegisterData(bit, 0, startTime);
-  },
-  latency: (latency, startTime) => {
-    globalRegisterData(latency, 3, startTime);
-  },
-  bandwidth: (bandwidth, startTime) => {
-    globalRegisterData(bandwidth, 2, startTime);
-  },
-  bufferSize: (buffersize, startTime) => {
-    globalRegisterData(buffersize, 4, startTime)
+  const videoData = chart.data.datasets[0].data;
+  if (videoData.length === 0) {
+    return false;
   }
-};
-
-export const dumpData = () => {
-  return myChart.data.datasets.map((dataset)=> dataset.data)
+  const lastBitrateTime = videoData[videoData.length - 1].x;
+  return (performance.now() - timeRef) / 1000 - CHART_UPDATING_INTERVAL / 1000 > lastBitrateTime;
 }
 
-export const isVideoBitrateConstantSince = (startTime, since = 5) => {
-  var videoData = myChart.data.datasets[0].data
-  var lastBitrateTime = videoData[videoData.length - 1].x
-  return (performance.now() - startTime)/1000 - since > lastBitrateTime
-}
-
-export const cheatVideoData = (startTime) => {
-  var videoData = myChart.data.datasets[0].data
-  var lastBitrate = videoData[videoData.length - 1].y
-  registerEvent.videoBitrate(lastBitrate, startTime)
+function repeatLastVideoBitrateEvent() {
+  if (chart === null) {
+    return;
+  }
+  const videoData = chart.data.datasets[0].data
+  const lastBitrate = videoData[videoData.length - 1].y
+  registerEvent.videoBitrate(lastBitrate)
 }
