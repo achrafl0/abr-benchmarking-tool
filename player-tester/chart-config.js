@@ -60,6 +60,9 @@ export var config = {
   type: "line",
   data: { datasets: [videoSet, audioSet, bandwidthSet, latencySet, bufferSizeSet] },
   options: {
+    animation: {
+      duration: 0
+    },
     scales: {
       audioYAxis: {
         title: { text: "Audio bitrate", display: true },
