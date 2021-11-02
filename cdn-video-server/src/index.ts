@@ -1,6 +1,7 @@
 import http from "http";
 import https from "https";
 import express from "express";
+// import proxy from "express-http-proxy";
 import path from "path";
 import toxiproxyRouter, {
   toxiproxy,
@@ -25,19 +26,31 @@ app.use((_req, res, next) => {
 });
 
 app.use("/proxy", (req, res) => {
-  const url = req.originalUrl.substring(7);
-  if (url.substring(0, 6) === "https:") {
-    https.get(url, (realRes) => {
-      res.writeHead(realRes.statusCode ?? 200, realRes.headers);
-      realRes.pipe(res);
-    });
-  } else if (url.substring(0, 5) === "http:") {
-    http.get(url, (realRes) => {
-      res.writeHead(realRes.statusCode ?? 200, realRes.headers);
-      realRes.pipe(res);
+  const url = new URL(req.originalUrl.substring(7));
+  const headers = { ...req.headers };
+  delete headers.host;
+  const reqOptions = {
+    hostname: url.host,
+    path: url.pathname,
+    port: url.port,
+    headers,
+  };
+
+  if (url.protocol === "https:") {
+    https.get(reqOptions, reqCb);
+  } else if (url.protocol === "http:") {
+    http.get(reqOptions, reqCb);
+  } else {
+    res.status(422).send({
+      success: false,
+      error: "Asked resource was neither HTTP nor HTTPS",
     });
   }
-  // TODO better response if not handled
+
+  function reqCb(realRes : http.IncomingMessage) {
+    res.writeHead(realRes.statusCode ?? 200, realRes.headers);
+    realRes.pipe(res);
+  }
 });
 
 app.use(

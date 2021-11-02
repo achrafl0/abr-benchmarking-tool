@@ -18,7 +18,7 @@ module.exports = {
     // TODO
     "import/no-unresolved": "off",
     "import/extensions": "off",
-
+    "no-use-before-define": "off",
     quotes: ["error", "double"],
   },
 };
