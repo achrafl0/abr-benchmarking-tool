@@ -8,8 +8,6 @@ import {
 } from "toxiproxy-node-client";
 import {
   CDN_PORT,
-  DEFAULT_BANDWITH,
-  DEFAULT_LATENCY,
   PROXY_NAME,
   TOXIPROXY_PORT,
   TOXIPROXY_SERVER,
@@ -29,7 +27,17 @@ const router = Router();
 router.get("/bandwidth", async (_req, res) => {
   const proxy = await toxiproxyProxy.update();
   await proxy.refreshToxics();
-  const network = { latency: DEFAULT_LATENCY, bandwidth: DEFAULT_BANDWITH };
+  const network : {
+    bandwidth?: {
+      toxicity: number;
+      rate?: number;
+    };
+    latency?: {
+      toxicity: number;
+      latency?: number;
+      jitter?: number;
+    };
+  } = {};
   proxy.toxics.forEach((toxic) => {
     if (toxic.type === "bandwidth") {
       network.bandwidth = {
