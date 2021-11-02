@@ -1,7 +1,6 @@
 import http from "http";
 import https from "https";
 import express from "express";
-// import proxy from "express-http-proxy";
 import path from "path";
 import toxiproxyRouter, {
   toxiproxy,
@@ -28,6 +27,8 @@ app.use((_req, res, next) => {
 app.use("/proxy", (req, res) => {
   const url = new URL(req.originalUrl.substring(7));
   const headers = { ...req.headers };
+
+  // TODO
   delete headers.host;
   const reqOptions = {
     hostname: url.host,
