@@ -47,6 +47,7 @@ This tool is divided in two:
 ### The server
 
 The server is written in nodejs in the `./cdn-video-server` directory.
+It can be run through the `./start_server.sh` script.
 
 It has the following features:
 
@@ -73,6 +74,7 @@ So there's basically two ports exposed:
 
 The client is written in the usual HTTP/CSS/JavaScript combo an is in the
 `./player-tester` directory.
+It can be run by going into the directory and calling `npm run build`.
 
 It's role is to run "scenarios" (written in `./player-tester/src/scenarios`)
 while monitoring multiple playback metrics to then display a chart of a player's
