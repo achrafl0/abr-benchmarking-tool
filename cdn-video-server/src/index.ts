@@ -1,5 +1,6 @@
+import http from "http";
+import https from "https";
 import express from "express";
-import proxy from "express-http-proxy";
 import path from "path";
 import toxiproxyRouter, {
   toxiproxy,
@@ -23,9 +24,20 @@ app.use((_req, res, next) => {
   next();
 });
 
-app.use("/proxy/:url", (req, res, next) => {
+app.use("/proxy", (req, res) => {
   const url = req.originalUrl.substring(7);
-  return proxy(url)(req, res, next);
+  if (url.substring(0, 6) === "https:") {
+    https.get(url, (realRes) => {
+      res.writeHead(realRes.statusCode ?? 200, realRes.headers);
+      realRes.pipe(res);
+    });
+  } else if (url.substring(0, 5) === "http:") {
+    http.get(url, (realRes) => {
+      res.writeHead(realRes.statusCode ?? 200, realRes.headers);
+      realRes.pipe(res);
+    });
+  }
+  // TODO better response if not handled
 });
 
 app.use(
