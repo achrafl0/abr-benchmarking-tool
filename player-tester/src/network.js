@@ -12,13 +12,17 @@ export const getBandwidth = async (startTime = 0) => {
   fetch(BANDWIDTH_URL)
     .then((response) => response.json())
     .then((network) => {
-      registerEvent.bandwidth(
-        network.bandwidth.rate,
-        startTime
-      );
-      registerEvent.latency(
-        network.latency.latency + network.latency.jitter / 2,
-        startTime
-      );
+      if (network.bandwidth !== undefined) {
+        registerEvent.bandwidth(
+          network.bandwidth.rate,
+          startTime
+        );
+      }
+      if (network.latency !== undefined) {
+        registerEvent.latency(
+          network.latency.latency + network.latency.jitter / 2,
+          startTime
+        );
+      }
     });
 };
