@@ -70,6 +70,61 @@ So there's basically two ports exposed:
   - `5000`: Port to this server unaffected by the bad network conditions.
     This port is usually used to configure network conditions.
 
+The following URLs are accessible through this server:
+
+  - `/videos` exposes the `./cdn-video-server/static/videos` directory though an
+    express static file server.
+
+  - `/proxy` exposes a proxy.
+    To access for example `https://www.example.com` through the erver you can
+    request `/proxy/https://www.example.com`.
+
+  - `/toxics` allows to configure Toxiproxy.
+    You can update network conditions by posting JSON through the HTTP `POST`
+    on this route.
+
+    Here is a full example of how you can configure Toxiproxy:
+    ```js
+    {
+      // Optional bandwidth configuration.
+      // No bandwidth restriction will be applied if this key is not present.
+      "bandwidth": {
+        // The bandwidth wanted, in kilobits per seconds.
+        rate: 1000,
+
+        // The "toxicity", which is a number between 0 and 1 indicating the
+        // chance that this bandwidth configuration is applied.
+        //
+        // This is totally optional and set to `1` by default (meaning the
+        // configuration is always applied).
+        // You usually don't want to modify this value.
+        toxicity: 1
+      },
+
+      // Optional latency configuration.
+      // No bandwidth restriction will be applied if this key is not present.
+      "latency": {
+        // The network latency, in milliseconds
+        latency: 300,
+
+        // Delta applied randomly to the latency to produce the actual latency.
+        // In this way, the actual latency is equal to `latency +/- jitter`.
+        jitter: 100,
+
+        // The "toxicity", which is a number between 0 and 1 indicating the
+        // chance that this latency configuration is applied.
+        //
+        // This is totally optional and set to `1` by default (meaning the
+        // configuration is always applied).
+        // You usually don't want to modify this value.
+        toxicity: 1
+      }
+    }
+    ```
+
+  - `/bandwidth` allows to fetch the current network conditions applied.
+    The format is the same one than what is posted to `/toxics`.
+
 ### The client
 
 The client is written in the usual HTTP/CSS/JavaScript combo an is in the

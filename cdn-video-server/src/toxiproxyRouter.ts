@@ -32,10 +32,17 @@ router.get("/bandwidth", async (_req, res) => {
   const network = { latency: DEFAULT_LATENCY, bandwidth: DEFAULT_BANDWITH };
   proxy.toxics.forEach((toxic) => {
     if (toxic.type === "bandwidth") {
-      network.bandwidth = toxic.attributes as Bandwidth;
+      network.bandwidth = {
+        toxicity: toxic.toxicity,
+        ...toxic.attributes as Bandwidth,
+      };
+      network.bandwidth.toxicity = toxic.toxicity;
     }
     if (toxic.type === "latency") {
-      network.latency = toxic.attributes as Latency;
+      network.latency = {
+        toxicity: toxic.toxicity,
+        ...toxic.attributes as Latency,
+      };
     }
   });
   return res.json(network);
