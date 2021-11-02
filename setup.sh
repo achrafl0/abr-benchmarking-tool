@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 ask_for_manual_toxiproxy_install() {
   printf "You will need to install toxiproxy manually.\n\
 Go to https://github.com/Shopify/toxiproxy#usage, choose \
