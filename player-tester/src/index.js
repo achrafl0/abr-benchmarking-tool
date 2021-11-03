@@ -4,7 +4,7 @@ import RxPlayerSimpleLoadVideoDash from "./scenarios/rx_player_simple_load_video
 
 const videoElement = document.getElementsByTagName("video")[0];
 const LOCAL_MPD_URL =
-  "http://localhost:5001/videos/BigBuckBunny/2sec/BigBuckBunny_2s_simple_2014_05_09.mpd";
+  "http://localhost:5001/proxy/https://cmafref.akamaized.net/cmaf/live-ull/2006350/akambr/out.mpd";
 
 // const PROXY_MPD_URL = "http://localhost:5001/proxy/dash/tears_of_steel/cleartext/stream.mpd"
 

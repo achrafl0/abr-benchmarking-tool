@@ -1,6 +1,6 @@
 import RxPlayer from "rx-player";
 import bindToRxPlayer from "../binders/rx-player";
-import { updateToxics } from "../utils";
+// import { updateToxics } from "../utils";
 
 /**
  * Scenario to launch a simple DASH content with autoPlay until its end (or an
@@ -15,7 +15,7 @@ export default function RxPlayerSimpleLoadVideoDash(mediaElement, mpdUrl) {
   return new Promise(async (res) => {
     let hasEnded = false;
 
-    await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
+    // await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
     const player = new RxPlayer({ videoElement: mediaElement });
     window.player = player;
     const unbind = bindToRxPlayer(player, mediaElement);
@@ -26,7 +26,7 @@ export default function RxPlayerSimpleLoadVideoDash(mediaElement, mpdUrl) {
     });
 
     const timeout = setTimeout(finish, 20000);
-    player.addEventListener("playerStateChange", state => {
+    player.addEventListener("playerStateChange", (state) => {
       if (state === "STOPPED" || state === "ENDED") {
         finish();
       }
