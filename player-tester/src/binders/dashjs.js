@@ -10,14 +10,27 @@ import { computeBufferSize } from "../utils";
  * content plays.
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
-export default function bindToDashjs(
-  player,
-  mediaElement
-) {
+export default function bindToDashjs(player, mediaElement) {
+  let currentTime = 0;
   player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (a) => {
-      console.log(a)
-      console.log(player.getQualityFor('video'))
+    console.log(a);
+    console.log(player.getQualityFor("video"));
   });
+  const currentTimeId = setInterval(onCurrentTimeChange, 1000);
+  const rateChange = setInterval(onPlaybackRateChange, 1000);
+
+  function onPlaybackRateChange() {
+    registerEvent.playbackRate(mediaElement.playbackRate);
+  }
+
+  function onCurrentTimeChange(time) {
+    if (mediaElement.currentTime === currentTime) {
+      registerEvent.currentTime(0);
+      return;
+    }
+    registerEvent.currentTime(1);
+    currentTime = mediaElement.currentTime;
+  }
 
   const bandwidthItv = setInterval(async () => {
     await getBandwidth();
@@ -29,9 +42,10 @@ export default function bindToDashjs(
   }, 100);
 
   return () => {
+    clearInterval(currentTimeId);
+    clearInterval(rateChange);
     clearInterval(bufferSizeItv);
     clearInterval(bandwidthItv);
     player.off(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED);
   };
-};
-
+}

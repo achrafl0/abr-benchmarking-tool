@@ -16,6 +16,7 @@ export default function RxPlayerSimpleLoadVideoDash(mediaElement, mpdUrl) {
     let hasEnded = false;
 
     // await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
+    document.getElementById("player").textContent = "Player used: RxPlayer";
     const player = new RxPlayer({ videoElement: mediaElement });
     window.player = player;
     const unbind = bindToRxPlayer(player, mediaElement);
@@ -23,9 +24,10 @@ export default function RxPlayerSimpleLoadVideoDash(mediaElement, mpdUrl) {
       url: mpdUrl,
       transport: "dash",
       autoPlay: true,
+      lowLatencyMode: true,
     });
-
-    const timeout = setTimeout(finish, 20000);
+    player.mute();
+    const timeout = setTimeout(finish, 20_000);
     player.addEventListener("playerStateChange", (state) => {
       if (state === "STOPPED" || state === "ENDED") {
         finish();

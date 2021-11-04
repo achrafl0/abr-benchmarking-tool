@@ -16,12 +16,22 @@ export default function DashJsSimpleLoadVideoDash(mediaElement, mpdUrl) {
     let hasEnded = false;
 
     //await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
+    document.getElementById("player").textContent = "Player used: DashJS L2ALL";
     const player = dashjs.MediaPlayer().create();
     window.player = player;
     const unbind = bindToDashjs(player, mediaElement);
+    player.updateSettings({
+      streaming: {
+        lowLatencyEnabled: true,
+        abr: {
+          useDefaultABRRules: true,
+          ABRStrategy: "abrL2A",
+        },
+      },
+    });
     player.initialize(mediaElement, mpdUrl, true);
 
-    const timeout = setTimeout(finish, 20000);
+    const timeout = setTimeout(finish, 20_000);
     player.on(dashjs.MediaPlayer.events.PLAYBACK_ENDED, finish);
 
     function finish() {

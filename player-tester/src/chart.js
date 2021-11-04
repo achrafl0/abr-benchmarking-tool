@@ -1,7 +1,4 @@
-import {
-  Chart,
-  registerables,
-} from "chart.js";
+import { Chart, registerables } from "chart.js";
 
 /** Chart.js's chart once it has been initialized. */
 let chart = null;
@@ -64,15 +61,43 @@ const bufferSizeSet = {
   data: [],
   stepped: "before",
   fill: true,
-  yAxisID: "bufferSizeYAxis"
-}
+  yAxisID: "bufferSizeYAxis",
+};
+const currentTimeSet = {
+  label: "currentTime (s)",
+  borderColor: "#FF4466",
+  backgroundColor: "white",
+  data: [],
+  stepped: "before",
+  fill: true,
+  yAxisID: "currentTimeYAxis",
+};
+const playbackRateSet = {
+  label: "playbackRate",
+  borderColor: "#1155FF",
+  backgroundColor: "white",
+  data: [],
+  stepped: "before",
+  fill: true,
+  yAxisID: "playbackRateYAxis",
+};
 
 const config = {
   type: "line",
-  data: { datasets: [videoSet, audioSet, bandwidthSet, latencySet, bufferSizeSet] },
+  data: {
+    datasets: [
+      videoSet,
+      audioSet,
+      bandwidthSet,
+      latencySet,
+      bufferSizeSet,
+      currentTimeSet,
+      playbackRateSet,
+    ],
+  },
   options: {
     animation: {
-      duration: 0
+      duration: 0,
     },
     scales: {
       audioYAxis: {
@@ -141,9 +166,41 @@ const config = {
         type: "linear",
         position: "left",
         min: 0,
-        max: 180,
+        max: 50,
         ticks: {
           color: (_x) => "#4DFF00",
+          callback: function (value, _index, _values) {
+            return value + " s";
+          },
+        },
+      },
+      currentTimeYAxis: {
+        title: {
+          display: true,
+          text: "Current Time",
+        },
+        type: "linear",
+        position: "left",
+        min: 0,
+        max: 50,
+        ticks: {
+          color: (_x) => "#FF4466",
+          callback: function (value, _index, _values) {
+            return value + " s";
+          },
+        },
+      },
+      playbackRateYAxis: {
+        title: {
+          display: true,
+          text: "Playback rate",
+        },
+        type: "linear",
+        position: "left",
+        min: 0,
+        max: 10,
+        ticks: {
+          color: (_x) => "#1155FF",
           callback: function (value, _index, _values) {
             return value + " s";
           },
@@ -152,7 +209,7 @@ const config = {
       xAxis: {
         title: {
           display: true,
-          text: "Time"
+          text: "Time",
         },
         type: "linear",
         min: 0,
@@ -161,8 +218,8 @@ const config = {
           callback: function (value, _index, _values) {
             return value + " s";
           },
-        }
-      }
+        },
+      },
     },
     elements: {
       line: {
@@ -197,8 +254,14 @@ export const registerEvent = {
     internalRegisterData(bandwidth, 2);
   },
   bufferSize: (buffersize) => {
-    internalRegisterData(buffersize, 4)
-  }
+    internalRegisterData(buffersize, 4);
+  },
+  currentTime: (currentTime) => {
+    internalRegisterData(currentTime + 1, 5);
+  },
+  playbackRate: (rate) => {
+    internalRegisterData(rate, 6);
+  },
 };
 
 /**
@@ -210,7 +273,7 @@ function internalRegisterData(data, index) {
   if (chart === null) {
     throw new Error("Chart not initialized");
   }
-  const deltaTime = (performance.now() - timeRef) / 1000
+  const deltaTime = (performance.now() - timeRef) / 1000;
 
   chart.data.datasets[index].data = [
     ...chart.data.datasets[index].data,
@@ -219,7 +282,7 @@ function internalRegisterData(data, index) {
   if (!chartIsUpdating) {
     startUpdatingChart(timeRef);
   }
-};
+}
 
 function startUpdatingChart() {
   if (chartIsUpdating) {
@@ -249,14 +312,17 @@ function isVideoBitrateConstant() {
     return false;
   }
   const lastBitrateTime = videoData[videoData.length - 1].x;
-  return (performance.now() - timeRef) / 1000 - CHART_UPDATING_INTERVAL / 1000 > lastBitrateTime;
+  return (
+    (performance.now() - timeRef) / 1000 - CHART_UPDATING_INTERVAL / 1000 >
+    lastBitrateTime
+  );
 }
 
 function repeatLastVideoBitrateEvent() {
   if (chart === null) {
     return;
   }
-  const videoData = chart.data.datasets[0].data
-  const lastBitrate = videoData[videoData.length - 1].y
-  registerEvent.videoBitrate(lastBitrate)
+  const videoData = chart.data.datasets[0].data;
+  const lastBitrate = videoData[videoData.length - 1].y;
+  registerEvent.videoBitrate(lastBitrate);
 }
