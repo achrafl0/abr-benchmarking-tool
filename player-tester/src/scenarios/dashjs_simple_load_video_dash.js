@@ -30,6 +30,7 @@ export default function DashJsSimpleLoadVideoDash(mediaElement, mpdUrl) {
       },
     });
     player.initialize(mediaElement, mpdUrl, true);
+    player.setMute(true);
 
     const timeout = setTimeout(finish, 20_000);
     player.on(dashjs.MediaPlayer.events.PLAYBACK_ENDED, finish);
