@@ -27,6 +27,7 @@ const audioSet = {
   stepped: "after",
   fill: false,
 };
+
 const videoSet = {
   label: "Video Bitrate",
   borderColor: "#91cf96",
@@ -36,6 +37,7 @@ const videoSet = {
   fill: false,
   yAxisID: "videoYAxis",
 };
+
 const bandwidthSet = {
   label: "Bandwidth (kb/s)",
   borderColor: "#c881d2",
@@ -45,6 +47,7 @@ const bandwidthSet = {
   fill: false,
   yAxisID: "bandwidthYAxis",
 };
+
 const latencySet = {
   label: "Latency (ms)",
   borderColor: "#29b6f6",
@@ -54,31 +57,34 @@ const latencySet = {
   fill: false,
   yAxisID: "latencyYAxis",
 };
+
 const bufferSizeSet = {
   label: "Buffer size (s)",
   borderColor: "#4DFF00",
   backgroundColor: "white",
   data: [],
   stepped: "before",
-  fill: true,
+  fill: false,
   yAxisID: "bufferSizeYAxis",
 };
+
 const currentTimeSet = {
-  label: "currentTime (s)",
+  label: "Time evolution",
   borderColor: "#FF4466",
   backgroundColor: "white",
   data: [],
   stepped: "before",
-  fill: true,
+  fill: false,
   yAxisID: "currentTimeYAxis",
 };
+
 const playbackRateSet = {
   label: "playbackRate",
   borderColor: "#1155FF",
   backgroundColor: "white",
   data: [],
   stepped: "before",
-  fill: true,
+  fill: false,
   yAxisID: "playbackRateYAxis",
 };
 
@@ -104,12 +110,12 @@ const config = {
         title: { text: "Audio bitrate", display: true },
         type: "linear",
         position: "left",
-        min: -1,
+        min: 0,
         max: 1000,
         ticks: {
           color: "#ffbaa2",
           callback: function (value, _index, _values) {
-            return value + " kbit/s";
+            return value + " kbps";
           },
         },
       },
@@ -117,12 +123,12 @@ const config = {
         title: { text: "Video bitrate", display: true },
         type: "linear",
         position: "left",
-        min: -1,
-        max: 4500000,
+        min: 0,
+        max: 1000,
         ticks: {
           color: "#91cf96",
           callback: function (value, _index, _values) {
-            return value + " kbit/s";
+            return value + " kbps";
           },
         },
       },
@@ -130,12 +136,12 @@ const config = {
         title: { text: "Bandwidth ", display: true },
         type: "linear",
         position: "right",
-        min: 500,
-        max: 25000,
+        min: 0,
+        max: 1000,
         ticks: {
           color: "#c881d2",
           callback: function (value, _index, _values) {
-            return value + " kbit/s";
+            return value + " kbps";
           },
         },
       },
@@ -213,7 +219,7 @@ const config = {
         ticks: {
           color: (_x) => "#1155FF",
           callback: function (value, _index, _values) {
-            return value + " s";
+            return value;
           },
         },
       },
@@ -237,7 +243,7 @@ const config = {
         tension: 10, // disables bezier curves
       },
       point: {
-        radius: 1,
+        radius: 2,
         borderWidth: 2,
         pointStyle: "circle",
       },
@@ -299,41 +305,47 @@ function startUpdatingChart() {
   if (chartIsUpdating) {
     stopUpdatingChart();
   }
+  updateScales();
   chart.update();
   chartUpdatingIntervalId = setInterval(() => {
-    if (isVideoBitrateConstant()) {
-      repeatLastVideoBitrateEvent();
-    }
+    updateScales();
     chart.update();
   }, CHART_UPDATING_INTERVAL);
   chartIsUpdating = true;
 }
 
-function stopUpdatingChart() {
+function updateScales() {
+  const [
+    videoDataSet,
+    audioDataSet,
+    bandwidthDataSet,
+    latencyDataSet,
+    bufferSizeDataSet,
+    playbackRateDataSet
+  ] = chart.data.datasets;
+  const videoYData = videoDataSet.data.map(({ y }) => y);
+  const audioYData = audioDataSet.data.map(({ y }) => y);
+  const bandwidthYData = bandwidthDataSet.data.map(({ y }) => y);
+  const latencyYData = latencyDataSet.data.map(({ y }) => y);
+  const bufferSizeYData = bufferSizeDataSet.data.map(({ y }) => y);
+  const playbackRateYData = playbackRateDataSet.data.map(({ y }) => y);
+  chart.options.scales.videoYAxis.max = Math.ceil(Math.max(...videoYData, 0) + 5000);
+  chart.options.scales.audioYAxis.max = Math.ceil(Math.max(...audioYData, 0) + 5000);
+  chart.options.scales.bandwidthYAxis.max = Math.ceil(Math.max(...bandwidthYData, 0) + 5000);
+  chart.options.scales.latencyYAxis.max = Math.ceil(Math.max(...latencyYData, 0) + 1000);
+  chart.options.scales.bufferSizeYAxis.max = Math.ceil(Math.max(...bufferSizeYData, 0) + 5);
+  chart.options.scales.playbackRateYAxis.max = Math.ceil(Math.max(...playbackRateYData, 0) + 1);
+}
+
+export function resetChartProps() {
+  registerEvent.audioBitrate(0);
+  registerEvent.videoBitrate(0);
+  registerEvent.bufferSize(0);
+  registerEvent.currentTime(1);
+  registerEvent.playbackRate(0);
+};
+
+export function stopUpdatingChart() {
   clearTimeout(chartUpdatingIntervalId);
   chartIsUpdating = false;
-}
-
-function isVideoBitrateConstant() {
-  if (chart.data.datasets.length === 0) {
-    return false;
-  }
-  const videoData = chart.data.datasets[0].data;
-  if (videoData.length === 0) {
-    return false;
-  }
-  const lastBitrateTime = videoData[videoData.length - 1].x;
-  return (
-    (performance.now() - timeRef) / 1000 - CHART_UPDATING_INTERVAL / 1000 >
-    lastBitrateTime
-  );
-}
-
-function repeatLastVideoBitrateEvent() {
-  if (chart === null) {
-    return;
-  }
-  const videoData = chart.data.datasets[0].data;
-  const lastBitrate = videoData[videoData.length - 1].y;
-  registerEvent.videoBitrate(lastBitrate);
 }
