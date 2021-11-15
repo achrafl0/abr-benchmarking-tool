@@ -1,7 +1,9 @@
-import RxPlayer from "rx-player";
+import RxPlayer from "rx-player/minimal";
+import { DASH } from "rx-player/features";
 import bindToRxPlayer from "../binders/rx-player";
 // import { updateToxics } from "../utils";
 
+RxPlayer.addFeatures([DASH]);
 /**
  * Scenario to launch a simple DASH content with autoPlay until its end (or an
  * error) through the RxPlayer.
