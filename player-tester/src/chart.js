@@ -182,11 +182,22 @@ const config = {
         type: "linear",
         position: "left",
         min: 0,
-        max: 50,
+        max: 4,
         ticks: {
           color: (_x) => "#FF4466",
           callback: function (value, _index, _values) {
-            return value + " s";
+            switch (value) {
+              case 0:
+                return "Reverse";
+              case 1:
+                return "Stopped";
+              case 2:
+                return "Too slow";
+              case 3:
+                return "Normal";
+              case 4:
+                return "Too fast";
+            }
           },
         },
       },
@@ -257,7 +268,7 @@ export const registerEvent = {
     internalRegisterData(buffersize, 4);
   },
   currentTime: (currentTime) => {
-    internalRegisterData(currentTime + 1, 5);
+    internalRegisterData(currentTime, 5);
   },
   playbackRate: (rate) => {
     internalRegisterData(rate, 6);
