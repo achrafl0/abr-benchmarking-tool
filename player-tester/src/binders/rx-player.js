@@ -14,17 +14,9 @@ export default function bindToRxPlayer(player, videoElement) {
   player.addEventListener("audioBitrateChange", onAudioBitrateChange);
   player.addEventListener("videoBitrateChange", onVideoBitrateChange);
   player.addEventListener("playerStateChange", onPlayerStateChange);
-  // player.addEventListener("positionUpdate", checkCurrentTime);
 
   const currentTimeId = setInterval(onCurrentTimeChange, 1000);
   const rateChange = setInterval(onPlaybackRateChange, 1000);
-
-  const liveEdge = setInterval(onDetectLiveEdge, 100);
-
-  function onDetectLiveEdge() {
-    const len = videoElement.buffered.length;
-    console.warn("RXPLAYER", videoElement.buffered.end(len - 1));
-  }
 
   const bandwidthItv = setInterval(async () => {
     await getBandwidth();
@@ -72,7 +64,6 @@ export default function bindToRxPlayer(player, videoElement) {
   }
 
   return () => {
-    clearInterval(liveEdge);
     clearInterval(currentTimeId);
     clearInterval(rateChange);
     clearInterval(bandwidthItv);

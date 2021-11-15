@@ -12,19 +12,13 @@ import { computeBufferSize } from "../utils";
  */
 export default function bindToDashjs(player, videoElement) {
   let currentTime = 0;
-  player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (a) => {
-    console.log(a);
-    console.log(player.getQualityFor("video"));
-  });
+  player.on(
+    dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
+    onVideoBitrateChange
+  );
+
   const currentTimeId = setInterval(onCurrentTimeChange, 1000);
   const rateChange = setInterval(onPlaybackRateChange, 1000);
-
-  const liveEdge = setInterval(onDetectLiveEdge, 100);
-
-  function onDetectLiveEdge() {
-    const len = videoElement.buffered.length;
-    console.warn("DASHJS", videoElement.buffered.end(len - 1));
-  }
 
   function onPlaybackRateChange() {
     registerEvent.playbackRate(videoElement.playbackRate);
@@ -39,6 +33,11 @@ export default function bindToDashjs(player, videoElement) {
     currentTime = videoElement.currentTime;
   }
 
+  function onVideoBitrateChange({ newQuality }) {
+    const bitrate = player.getBitrateInfoListFor("video")[newQuality].bitrate;
+    registerEvent.videoBitrate(bitrate);
+  }
+
   const bandwidthItv = setInterval(async () => {
     await getBandwidth();
   }, 1000);
@@ -49,7 +48,6 @@ export default function bindToDashjs(player, videoElement) {
   }, 100);
 
   return () => {
-    clearInterval(liveEdge);
     clearInterval(currentTimeId);
     clearInterval(rateChange);
     clearInterval(bufferSizeItv);
