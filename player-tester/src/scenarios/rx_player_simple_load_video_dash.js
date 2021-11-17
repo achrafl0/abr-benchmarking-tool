@@ -27,7 +27,7 @@ export default function RxPlayerSimpleLoadVideoDash(mediaElement, mpdUrl) {
       lowLatencyMode: true,
     });
     player.mute();
-    const timeout = setTimeout(finish, 20_000);
+    const timeout = setTimeout(finish, 40_000);
     player.addEventListener("playerStateChange", (state) => {
       if (state === "STOPPED" || state === "ENDED") {
         finish();

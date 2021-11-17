@@ -14,7 +14,7 @@
     "dashjs": "^4.1.0",
     "player-inspector": "git+https://github.com/peaberberian/player-inspector.git",
     "rx-player": "^3.26.1",
-    "shaka-player": "^3.2.0"
+    "shaka-player": "^3.2.1"
   },
   "devDependencies": {
     "parcel-bundler": "^1.9.4"

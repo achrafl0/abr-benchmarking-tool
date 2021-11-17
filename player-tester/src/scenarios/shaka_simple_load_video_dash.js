@@ -1,5 +1,5 @@
-import dashjs from "dashjs";
-import bindToDashjs from "../binders/dashjs";
+import shaka from "shaka-player";
+import bindToShaka from "../binders/shaka";
 // import { updateToxics } from "../utils";
 
 /**
@@ -10,30 +10,33 @@ import bindToDashjs from "../binders/dashjs";
  * @param {string} mpdUrl - URL to the DASH MPD that you want to play.
  * @returns {Promise}
  */
-export default function DashJsSimpleLoadVideoDash(mediaElement, mpdUrl) {
+export default function ShakaSimpleLoadVideoDash(mediaElement, mpdUrl) {
   // TODO ending condition
   return new Promise(async (res) => {
     let hasEnded = false;
 
     //await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
-    document.getElementById("player").textContent = "Player used: DashJS L2ALL";
-    const player = dashjs.MediaPlayer().create();
-    window.player = player;
-    const unbind = bindToDashjs(player, mediaElement);
-    player.updateSettings({
+    document.getElementById("player").textContent = "Player used: Shaka Player";
+    console.warn("mediaElement");
+    const player = new shaka.Player(mediaElement);
+    player.configure({
       streaming: {
-        lowLatencyEnabled: true,
-        abr: {
-          useDefaultABRRules: true,
-          ABRStrategy: "abrL2A",
-        },
+        lowLatencyMode: true,
       },
     });
-    player.initialize(mediaElement, mpdUrl, true);
-    player.setMute(true);
+    window.player = player;
+    const unbind = bindToShaka(player, mediaElement);
+
+    player
+      .load(mpdUrl)
+      .then((res) => {
+        console.warn(res);
+      })
+      .catch((err) => {
+        console.warn(err);
+      });
 
     const timeout = setTimeout(finish, 40_000);
-    player.on(dashjs.MediaPlayer.events.PLAYBACK_ENDED, finish);
 
     function finish() {
       if (hasEnded) {
@@ -41,7 +44,6 @@ export default function DashJsSimpleLoadVideoDash(mediaElement, mpdUrl) {
       }
       hasEnded = true;
       clearTimeout(timeout);
-      player.off(dashjs.MediaPlayer.events.PLAYBACK_ENDED, finish);
       player.destroy();
       delete window.player;
       unbind();
