@@ -20,13 +20,6 @@ export default function bindToRxPlayer(player, videoElement) {
   const stopListeningCurrentTime = currentTimeListener(registerEvent, videoElement);
   const rateChange = setInterval(onPlaybackRateChange, 1000);
 
-  const liveEdge = setInterval(onDetectLiveEdge, 100);
-
-  function onDetectLiveEdge() {
-    const len = videoElement.buffered.length;
-    console.warn("RXPLAYER", videoElement.buffered.end(len - 1));
-  }
-
   const bandwidthItv = setInterval(async () => {
     await getBandwidth();
   }, 1000);
@@ -72,6 +65,7 @@ export default function bindToRxPlayer(player, videoElement) {
   }
 
   return () => {
+    clearInterval(currentTimeId);
     // unbind event listeners
     stopListeningCurrentTime();
     clearInterval(audioBitrateItv);

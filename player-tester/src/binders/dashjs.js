@@ -11,6 +11,27 @@ import { computeBufferSize, currentTimeListener } from "../utils";
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
 export default function bindToDashjs(player, videoElement) {
+  let currentTime = 0;
+  player.on(
+    dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
+    onVideoBitrateChange
+  );
+
+  const currentTimeId = setInterval(onCurrentTimeChange, 1000);
+  const rateChange = setInterval(onPlaybackRateChange, 1000);
+
+  function onPlaybackRateChange() {
+    registerEvent.playbackRate(videoElement.playbackRate);
+  }
+
+  function onCurrentTimeChange(time) {
+    if (videoElement.currentTime === currentTime) {
+      registerEvent.currentTime(0);
+      return;
+    }
+    registerEvent.currentTime(1);
+    currentTime = videoElement.currentTime;
+  }
   player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (a) => {
     console.log(a);
     console.log(player.getQualityFor("video"));
@@ -19,6 +40,10 @@ export default function bindToDashjs(player, videoElement) {
   const stopListeningCurrentTime = currentTimeListener(registerEvent, videoElement);
   const liveEdgeInterval = setInterval(onDetectLiveEdge, 100);
   videoElement.addEventListener("ratechange", updatePlaybackRate);
+  function onVideoBitrateChange({ newQuality }) {
+    const bitrate = player.getBitrateInfoListFor("video")[newQuality].bitrate;
+    registerEvent.videoBitrate(bitrate);
+  }
 
   const bandwidthItv = setInterval(async () => {
     await getBandwidth();
@@ -41,6 +66,8 @@ export default function bindToDashjs(player, videoElement) {
   }
 
   return () => {
+    clearInterval(currentTimeId);
+    clearInterval(rateChange);
     stopListeningCurrentTime();
     clearInterval(liveEdgeInterval);
     clearInterval(bufferSizeItv);
