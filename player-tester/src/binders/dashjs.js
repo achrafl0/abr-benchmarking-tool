@@ -1,7 +1,7 @@
 import dashjs from "dashjs";
 import { getBandwidth } from "../network";
 import { registerEvent } from "../chart";
-import { computeBufferSize } from "../utils";
+import { computeBufferSize, currentTimeListener } from "../utils";
 
 /**
  * Bind the player-tester to DASH.js events
@@ -32,7 +32,14 @@ export default function bindToDashjs(player, videoElement) {
     registerEvent.currentTime(1);
     currentTime = videoElement.currentTime;
   }
+  player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (a) => {
+    console.log(a);
+    console.log(player.getQualityFor("video"));
+  });
 
+  const stopListeningCurrentTime = currentTimeListener(registerEvent, videoElement);
+  const liveEdgeInterval = setInterval(onDetectLiveEdge, 100);
+  videoElement.addEventListener("ratechange", updatePlaybackRate);
   function onVideoBitrateChange({ newQuality }) {
     const bitrate = player.getBitrateInfoListFor("video")[newQuality].bitrate;
     registerEvent.videoBitrate(bitrate);
@@ -47,11 +54,25 @@ export default function bindToDashjs(player, videoElement) {
     registerEvent.bufferSize(bufferSize);
   }, 100);
 
+  function onDetectLiveEdge() {
+    const len = videoElement.buffered.length;
+    if (len > 0) {
+      console.warn("DASHJS", videoElement.buffered.end(len - 1));
+    }
+  }
+
+  function updatePlaybackRate() {
+    registerEvent.playbackRate(videoElement.playbackRate);
+  }
+
   return () => {
     clearInterval(currentTimeId);
     clearInterval(rateChange);
+    stopListeningCurrentTime();
+    clearInterval(liveEdgeInterval);
     clearInterval(bufferSizeItv);
     clearInterval(bandwidthItv);
     player.off(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED);
+    videoElement.removeEventListener("ratechange", updatePlaybackRate);
   };
 }

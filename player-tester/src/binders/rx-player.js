@@ -1,6 +1,7 @@
 import { getBandwidth } from "../network";
 import { registerEvent } from "../chart";
-import { computeBufferSize } from "../utils";
+import { computeBufferSize, currentTimeListener } from "../utils";
+
 
 /**
  * Bind the player-tester to RxPlayer events
@@ -10,12 +11,13 @@ import { computeBufferSize } from "../utils";
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
 export default function bindToRxPlayer(player, videoElement) {
-  let currentTime = 0;
+  let videoBitrateItv;
+  let audioBitrateItv;
   player.addEventListener("audioBitrateChange", onAudioBitrateChange);
   player.addEventListener("videoBitrateChange", onVideoBitrateChange);
   player.addEventListener("playerStateChange", onPlayerStateChange);
 
-  const currentTimeId = setInterval(onCurrentTimeChange, 1000);
+  const stopListeningCurrentTime = currentTimeListener(registerEvent, videoElement);
   const rateChange = setInterval(onPlaybackRateChange, 1000);
 
   const bandwidthItv = setInterval(async () => {
@@ -31,21 +33,20 @@ export default function bindToRxPlayer(player, videoElement) {
     registerEvent.playbackRate(videoElement.playbackRate);
   }
 
-  function onCurrentTimeChange(time) {
-    if (videoElement.currentTime === currentTime) {
-      registerEvent.currentTime(0);
-      return;
-    }
-    registerEvent.currentTime(1);
-    currentTime = videoElement.currentTime;
-  }
-
   function onAudioBitrateChange(bitrate) {
+    clearInterval(audioBitrateItv);
     registerEvent.audioBitrate(bitrate);
+    audioBitrateItv = setInterval(() => {
+      registerEvent.audioBitrate(bitrate);
+    }, 1000);
   }
 
   function onVideoBitrateChange(bitrate) {
+    clearInterval(videoBitrateItv);
     registerEvent.videoBitrate(bitrate);
+    videoBitrateItv = setInterval(() => {
+      registerEvent.videoBitrate(bitrate);
+    }, 1000);
   }
 
   async function onPlayerStateChange(state) {
@@ -65,12 +66,16 @@ export default function bindToRxPlayer(player, videoElement) {
 
   return () => {
     clearInterval(currentTimeId);
+    // unbind event listeners
+    stopListeningCurrentTime();
+    clearInterval(audioBitrateItv);
+    clearInterval(videoBitrateItv);
+    clearInterval(liveEdge);
     clearInterval(rateChange);
     clearInterval(bandwidthItv);
     clearInterval(bufferSizeItv);
     player.removeEventListener("playerStateChange", onPlayerStateChange);
     player.removeEventListener("audioBitrateChange", onAudioBitrateChange);
     player.removeEventListener("videoBitrateChange", onVideoBitrateChange);
-    player.removeEventListener("positionUpdate", onCurrentTimeChange);
   };
 }
