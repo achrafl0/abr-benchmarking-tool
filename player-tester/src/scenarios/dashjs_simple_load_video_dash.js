@@ -14,8 +14,6 @@ export default function DashJsSimpleLoadVideoDash(mediaElement, mpdUrl) {
   // TODO ending condition
   return new Promise(async (res) => {
     let hasEnded = false;
-
-    //await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
     document.getElementById("player").textContent = "Player used: DashJS L2ALL";
     const player = dashjs.MediaPlayer().create();
     window.player = player;

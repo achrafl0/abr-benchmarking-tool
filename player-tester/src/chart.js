@@ -1,10 +1,9 @@
 import { Chart, registerables } from "chart.js";
+import {CDN_SERVER_URL, CHART_UPDATING_INTERVAL} from "./consts"
 
 /** Chart.js's chart once it has been initialized. */
 let chart = null;
 
-/** Interval at which the Chart is refreshed. */
-const CHART_UPDATING_INTERVAL = 1000;
 
 /** If `true`, the Chart is currently updating at regular interval. */
 let chartIsUpdating = false;
@@ -297,7 +296,7 @@ function internalRegisterData(data, index) {
     { y: data, x: deltaTime },
   ];
   if (!chartIsUpdating) {
-    startUpdatingChart(timeRef);
+    startUpdatingChart();
   }
 }
 
@@ -349,3 +348,19 @@ export function stopUpdatingChart() {
   clearTimeout(chartUpdatingIntervalId);
   chartIsUpdating = false;
 }
+
+
+export function exportChart(playerName) {
+  const data = {player: "rxplayer", data: config}
+  fetch(CDN_SERVER_URL+"/report", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data),
+  }).then(() => {
+    window.alert(`Report enregistré`)
+  }).catch(() => {
+    window.alert("Error in export")
+  })
+} 
