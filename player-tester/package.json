@@ -10,7 +10,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "chart.js": "^3.5.1",
+    "chart.js": "^3.6.0",
     "dashjs": "^4.1.0",
     "player-inspector": "git+https://github.com/peaberberian/player-inspector.git",
     "rx-player": "^3.26.1",
