@@ -1,9 +1,10 @@
 import express from "express";
 import path from "path";
-import remoteProxyRouter from "./remote-proxy"
-import exportResultRouter from "./export-results"
-import { CDN_PORT,} from "./config";
-
+import remoteProxyRouter from "./remote-proxy";
+import exportResultRouter from "./export-results";
+import { CDN_PORT } from "./config";
+import Toxiproxy from "./toxiproxy/utils";
+import toxiProxyRouter from "./toxiproxy/toxiproxy-router"
 const app = express();
 
 // Middlewares
@@ -20,21 +21,31 @@ app.use((_req, res, next) => {
 });
 
 // Remote Proxy routes
-app.use(remoteProxyRouter)
+app.use(remoteProxyRouter);
 
 // Export results routes
-app.use(exportResultRouter)
+app.use(exportResultRouter);
+
+app.use(toxiProxyRouter);
 
 // Static Routes
 app.use(
   "/videos",
   express.static(path.join(__dirname, "..", "static", "videos"))
 );
-app.use("/data", express.static(path.join(__dirname, "..", "static", "data")))
-
+app.use("/data", express.static(path.join(__dirname, "..", "static", "data")));
 
 // Init
+/* eslint-disable-next-line no-console */
 app.listen(CDN_PORT, () => {
-  /* eslint-disable-next-line no-console */
-  console.log(`The content server is listening on port ${CDN_PORT} !`);
+  console.log(`The videoserver is listening on port ${CDN_PORT} !`);
+  Toxiproxy.populate()
+    .then(() => {
+      console.log(
+        `Toxiproxy has started up and is listening on ${Toxiproxy.listen} !`
+      );
+    })
+    .catch(() => {
+      console.warn(`Toxiproxy couldn't not launch :( `);
+    });
 });
