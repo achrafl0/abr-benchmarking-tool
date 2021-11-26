@@ -40,15 +40,15 @@ app.use("/data", express.static(path.join(__dirname, "..", "static", "data")));
 app.listen(CDN_PORT, () => {
   /* eslint-disable-next-line no-console */
   console.log(`The videoserver is listening on port ${CDN_PORT} !`);
-  Toxiproxy.populate()
+  Toxiproxy.initialize()
     .then(() => {
       /* eslint-disable-next-line no-console */
       console.log(
         `Toxiproxy has started up and is listening on ${Toxiproxy.listen} !`,
       );
     })
-    .catch(() => {
+    .catch((err) => {
       /* eslint-disable-next-line no-console */
-      console.warn("Toxiproxy couldn't not launch :( ");
+      console.warn("Toxiproxy could not launch :( ", err.message);
     });
 });
