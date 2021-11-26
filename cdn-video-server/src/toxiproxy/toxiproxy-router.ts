@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { IToxic } from "./toxiproxyTypes";
 import Toxiproxy from "./utils";
+
 const router = Router();
 
 router.use("/add-toxic", (req, res) => {
@@ -29,4 +30,4 @@ router.use("/update-toxic/", (req, res) => {
     .catch(() => res.status(500));
 });
 
-export default router
+export default router;

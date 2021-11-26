@@ -1,5 +1,3 @@
-
-
 export interface IProxy {
     name?: string;
     listen: string;
@@ -24,7 +22,6 @@ interface IAbstractToxic {
     toxicity?: number;
     attributes: unknown
 }
-
 
 export interface ILatencyToxic extends IAbstractToxic {
     type: ToxicType.LATENCY;
@@ -65,8 +62,8 @@ export interface IResetPeerToxic extends IAbstractToxic {
 export interface ISlicerToxic extends IAbstractToxic {
     type: ToxicType.SLICER;
     attributes: {
-        average_size?: number;
-        size_variation?: number;
+        averageSize?: number;
+        sizeVariation?: number;
         delay?: number;
     }
 }
@@ -78,4 +75,10 @@ export interface ILimitDataToxic extends IAbstractToxic {
     }
 }
 
-export type IToxic = ILatencyToxic | IBandwidthToxic | IResetPeerToxic | ISlicerToxic | ITimeoutToxic | ILimitDataToxic | ISlowCloseToxic
+export type IToxic = ILatencyToxic |
+  IBandwidthToxic |
+  IResetPeerToxic |
+  ISlicerToxic |
+  ITimeoutToxic |
+  ILimitDataToxic |
+  ISlowCloseToxic

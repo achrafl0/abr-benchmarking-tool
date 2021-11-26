@@ -4,7 +4,8 @@ import remoteProxyRouter from "./remote-proxy";
 import exportResultRouter from "./export-results";
 import { CDN_PORT } from "./config";
 import Toxiproxy from "./toxiproxy/utils";
-import toxiProxyRouter from "./toxiproxy/toxiproxy-router"
+import toxiProxyRouter from "./toxiproxy/toxiproxy-router";
+
 const app = express();
 
 // Middlewares
@@ -14,7 +15,7 @@ app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE",
   );
   res.setHeader("Access-Control-Allow-Headers", "*");
   next();
@@ -31,21 +32,23 @@ app.use(toxiProxyRouter);
 // Static Routes
 app.use(
   "/videos",
-  express.static(path.join(__dirname, "..", "static", "videos"))
+  express.static(path.join(__dirname, "..", "static", "videos")),
 );
 app.use("/data", express.static(path.join(__dirname, "..", "static", "data")));
 
 // Init
-/* eslint-disable-next-line no-console */
 app.listen(CDN_PORT, () => {
+  /* eslint-disable-next-line no-console */
   console.log(`The videoserver is listening on port ${CDN_PORT} !`);
   Toxiproxy.populate()
     .then(() => {
+      /* eslint-disable-next-line no-console */
       console.log(
-        `Toxiproxy has started up and is listening on ${Toxiproxy.listen} !`
+        `Toxiproxy has started up and is listening on ${Toxiproxy.listen} !`,
       );
     })
     .catch(() => {
-      console.warn(`Toxiproxy couldn't not launch :( `);
+      /* eslint-disable-next-line no-console */
+      console.warn("Toxiproxy couldn't not launch :( ");
     });
 });

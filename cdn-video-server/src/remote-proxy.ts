@@ -11,10 +11,9 @@ router.use("/proxy", (req, res) => {
   // TODO
   delete headers.host;
 
-  const auth =
-    url.username !== "" || url.password !== ""
-      ? undefined
-      : `${url.username}:${url.password}`;
+  const auth = url.username !== "" || url.password !== ""
+    ? undefined
+    : `${url.username}:${url.password}`;
 
   const reqOptions = {
     auth,
