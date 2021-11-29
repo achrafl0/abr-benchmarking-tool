@@ -6,6 +6,10 @@ const router = Router();
 
 router.post("/toxics", (req, res) => {
   const toxics: IToxic[] = req.body;
+  if (!Array.isArray(toxics)) {
+    // TODO better return?
+    res.status(500);
+  }
   Toxiproxy.updateToxics(toxics)
     .then(() => res.status(200))
     .catch(() => res.status(500));
