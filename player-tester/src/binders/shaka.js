@@ -1,5 +1,4 @@
 import { getBandwidth } from "../network";
-import { registerEvent } from "../chart";
 import { computeBufferSize } from "../utils";
 
 /**
@@ -7,9 +6,10 @@ import { computeBufferSize } from "../utils";
  * @param {Object} player - The ShakaPlayer instance
  * @param {HTMLMediaElement} videoElement - The media element on which the
  * content plays.
+ * @param {Object} eventEmitters
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
-export default function bindToShaka(player, videoElement) {
+export default function bindToShaka(player, videoElement, eventEmitters) {
   let currentTime = 0;
   console.warn(player);
 
@@ -17,15 +17,15 @@ export default function bindToShaka(player, videoElement) {
   const rateChange = setInterval(onPlaybackRateChange, 1000);
 
   function onPlaybackRateChange() {
-    registerEvent.playbackRate(videoElement.playbackRate);
+    eventEmitters.playbackRate(videoElement.playbackRate);
   }
 
   function onCurrentTimeChange() {
     if (videoElement.currentTime === currentTime) {
-      registerEvent.currentTime(0);
+      eventEmitters.currentTime(0);
       return;
     }
-    registerEvent.currentTime(1);
+    eventEmitters.currentTime(1);
     currentTime = videoElement.currentTime;
   }
 
@@ -35,7 +35,7 @@ export default function bindToShaka(player, videoElement) {
 
   const bufferSizeItv = setInterval(() => {
     const bufferSize = computeBufferSize(videoElement);
-    registerEvent.bufferSize(bufferSize);
+    eventEmitters.bufferSize(bufferSize);
   }, 100);
 
   return () => {

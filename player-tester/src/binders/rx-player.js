@@ -1,5 +1,4 @@
 import { getBandwidth } from "../network";
-import { registerEvent } from "../chart";
 import { computeBufferSize, currentTimeListener } from "../utils";
 
 
@@ -8,16 +7,17 @@ import { computeBufferSize, currentTimeListener } from "../utils";
  * @param {Object} player - The RxPlayer instance
  * @param {HTMLMediaElement} mediaElement - The media element on which the
  * content plays.
+ * @param {Object} eventEmitters
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
-export default function bindToRxPlayer(player, videoElement) {
+export default function bindToRxPlayer(player, videoElement, eventEmitters) {
   let videoBitrateItv;
   let audioBitrateItv;
   player.addEventListener("audioBitrateChange", onAudioBitrateChange);
   player.addEventListener("videoBitrateChange", onVideoBitrateChange);
   player.addEventListener("playerStateChange", onPlayerStateChange);
 
-  const stopListeningCurrentTime = currentTimeListener(registerEvent, videoElement);
+  const stopListeningCurrentTime = currentTimeListener(eventEmitters, videoElement);
   const rateChange = setInterval(onPlaybackRateChange, 1000);
 
   const bandwidthItv = setInterval(async () => {
@@ -26,26 +26,26 @@ export default function bindToRxPlayer(player, videoElement) {
 
   const bufferSizeItv = setInterval(() => {
     const bufferSize = computeBufferSize(videoElement);
-    registerEvent.bufferSize(bufferSize);
+    eventEmitters.bufferSize(bufferSize);
   }, 100);
 
   function onPlaybackRateChange() {
-    registerEvent.playbackRate(videoElement.playbackRate);
+    eventEmitters.playbackRate(videoElement.playbackRate);
   }
 
   function onAudioBitrateChange(bitrate) {
     clearInterval(audioBitrateItv);
-    registerEvent.audioBitrate(bitrate);
+    eventEmitters.audioBitrate(bitrate);
     audioBitrateItv = setInterval(() => {
-      registerEvent.audioBitrate(bitrate);
+      eventEmitters.audioBitrate(bitrate);
     }, 1000);
   }
 
   function onVideoBitrateChange(bitrate) {
     clearInterval(videoBitrateItv);
-    registerEvent.videoBitrate(bitrate);
+    eventEmitters.videoBitrate(bitrate);
     videoBitrateItv = setInterval(() => {
-      registerEvent.videoBitrate(bitrate);
+      eventEmitters.videoBitrate(bitrate);
     }, 1000);
   }
 

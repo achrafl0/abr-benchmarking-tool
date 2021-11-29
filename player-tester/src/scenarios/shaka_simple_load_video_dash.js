@@ -7,18 +7,20 @@ import bindToShaka from "../binders/shaka";
  * error) through DASH.js.
  * @param {HTMLMediaElement} mediaElement - The media element on which the
  * content will play.
+ * @param {Object} eventEmitters
  * @param {string} mpdUrl - URL to the DASH MPD that you want to play.
  * @returns {Promise}
  */
-export default function ShakaSimpleLoadVideoDash(mediaElement, mpdUrl) {
-  // TODO ending condition
+export default function ShakaSimpleLoadVideoDash(
+  mediaElement,
+  eventEmitters,
+  mpdUrl
+) {
   return new Promise(async (res) => {
     let hasEnded = false;
 
     //await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
-    document.getElementById("player").textContent = "Player used: Shaka Player";
     shaka.polyfill.installAll();
-    mediaElement.muted = true // allow autoPlay
     const player = new shaka.Player(mediaElement);
     player.configure({
       streaming: {
@@ -26,7 +28,7 @@ export default function ShakaSimpleLoadVideoDash(mediaElement, mpdUrl) {
       },
     });
     window.player = player;
-    const unbind = bindToShaka(player, mediaElement);
+    const unbind = bindToShaka(player, mediaElement, eventEmitters);
 
     player
       .load(mpdUrl)
@@ -37,7 +39,7 @@ export default function ShakaSimpleLoadVideoDash(mediaElement, mpdUrl) {
         console.error(err);
       });
 
-    const timeout = setTimeout(finish, 40_000);
+    const timeout = setTimeout(finish, 5_000);
 
     function finish() {
       if (hasEnded) {

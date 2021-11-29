@@ -1,6 +1,5 @@
 import dashjs from "dashjs";
 import { getBandwidth } from "../network";
-import { registerEvent } from "../chart";
 import { computeBufferSize, currentTimeListener } from "../utils";
 
 /**
@@ -8,9 +7,10 @@ import { computeBufferSize, currentTimeListener } from "../utils";
  * @param {Object} player - The DASH.js instance
  * @param {HTMLMediaElement} videoElement - The media element on which the
  * content plays.
+ * @param {Object} eventEmitters
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
-export default function bindToDashjs(player, videoElement) {
+export default function bindToDashjs(player, videoElement, eventEmitters) {
   let currentTime = 0;
   player.on(
     dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
@@ -21,15 +21,15 @@ export default function bindToDashjs(player, videoElement) {
   const rateChange = setInterval(onPlaybackRateChange, 1000);
 
   function onPlaybackRateChange() {
-    registerEvent.playbackRate(videoElement.playbackRate);
+    eventEmitters.playbackRate(videoElement.playbackRate);
   }
 
   function onCurrentTimeChange(time) {
     if (videoElement.currentTime === currentTime) {
-      registerEvent.currentTime(0);
+      eventEmitters.currentTime(0);
       return;
     }
-    registerEvent.currentTime(1);
+    eventEmitters.currentTime(1);
     currentTime = videoElement.currentTime;
   }
   player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (a) => {
@@ -37,12 +37,12 @@ export default function bindToDashjs(player, videoElement) {
     console.log(player.getQualityFor("video"));
   });
 
-  const stopListeningCurrentTime = currentTimeListener(registerEvent, videoElement);
+  const stopListeningCurrentTime = currentTimeListener(eventEmitters, videoElement);
   const liveEdgeInterval = setInterval(onDetectLiveEdge, 100);
   videoElement.addEventListener("ratechange", updatePlaybackRate);
   function onVideoBitrateChange({ newQuality }) {
     const bitrate = player.getBitrateInfoListFor("video")[newQuality].bitrate;
-    registerEvent.videoBitrate(bitrate);
+    eventEmitters.videoBitrate(bitrate);
   }
 
   const bandwidthItv = setInterval(async () => {
@@ -51,7 +51,7 @@ export default function bindToDashjs(player, videoElement) {
 
   const bufferSizeItv = setInterval(() => {
     const bufferSize = computeBufferSize(videoElement);
-    registerEvent.bufferSize(bufferSize);
+    eventEmitters.bufferSize(bufferSize);
   }, 100);
 
   function onDetectLiveEdge() {
@@ -62,7 +62,7 @@ export default function bindToDashjs(player, videoElement) {
   }
 
   function updatePlaybackRate() {
-    registerEvent.playbackRate(videoElement.playbackRate);
+    eventEmitters.playbackRate(videoElement.playbackRate);
   }
 
   return () => {
