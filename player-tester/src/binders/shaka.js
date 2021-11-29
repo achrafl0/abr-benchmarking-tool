@@ -1,4 +1,3 @@
-import { getBandwidth } from "../network";
 import { computeBufferSize } from "../utils";
 
 /**
@@ -6,42 +5,31 @@ import { computeBufferSize } from "../utils";
  * @param {Object} player - The ShakaPlayer instance
  * @param {HTMLMediaElement} videoElement - The media element on which the
  * content plays.
- * @param {Object} eventEmitters
+ * @param {Object} metricsStore
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
-export default function bindToShaka(player, videoElement, eventEmitters) {
-  let currentTime = 0;
-  console.warn(player);
+export default function bindToShaka(_player, videoElement, metricsStore) {
+  updatePlaybackRate();
+  videoElement.addEventListener("ratechange", updatePlaybackRate);
 
-  const currentTimeId = setInterval(onCurrentTimeChange, 1000);
-  const rateChange = setInterval(onPlaybackRateChange, 1000);
+  updateBufferSize();
+  const bufferSizeItv = setInterval(updateBufferSize, 100);
 
-  function onPlaybackRateChange() {
-    eventEmitters.playbackRate(videoElement.playbackRate);
-  }
-
-  function onCurrentTimeChange() {
-    if (videoElement.currentTime === currentTime) {
-      eventEmitters.currentTime(0);
-      return;
-    }
-    eventEmitters.currentTime(1);
-    currentTime = videoElement.currentTime;
-  }
-
-  const bandwidthItv = setInterval(async () => {
-    await getBandwidth();
-  }, 1000);
-
-  const bufferSizeItv = setInterval(() => {
+  function updateBufferSize() {
     const bufferSize = computeBufferSize(videoElement);
-    eventEmitters.bufferSize(bufferSize);
-  }, 100);
+    metricsStore.registerEvent("bufferSize", bufferSize);
+  }
+
+  function updatePlaybackRate() {
+    metricsStore.registerEvent("playbackRate", videoElement.playbackRate);
+  }
 
   return () => {
-    clearInterval(currentTimeId);
-    clearInterval(rateChange);
+    // send for the last time exceptional events (to have a continuous chart)
+    updatePlaybackRate();
+
+    // unbind event listeners
     clearInterval(bufferSizeItv);
-    clearInterval(bandwidthItv);
+    videoElement.removeEventListener("ratechange", updatePlaybackRate);
   };
 }

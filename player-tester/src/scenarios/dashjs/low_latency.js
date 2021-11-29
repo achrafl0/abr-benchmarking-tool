@@ -1,27 +1,31 @@
 import dashjs from "dashjs";
-import bindToDashjs from "../binders/dashjs";
+import bindToDashjs from "../../binders/dashjs";
 // import { updateToxics } from "../utils";
 
 /**
- * Scenario to launch a simple DASH content with autoPlay until its end (or an
- * error) through DASH.js.
+ * Scenario to launch a low-latency DASH content with autoPlay until a timeout,
+ * its end (or an error) through DASH.js.
+ *
  * @param {HTMLMediaElement} mediaElement - The media element on which the
  * content will play.
- * @param {Object} eventEmitters
+ * @param {Object} metricsStore - Object allowing to dispatch metrics.
  * @param {string} mpdUrl - URL to the DASH MPD that you want to play.
+ * @param {number} timeout - Timeout after which the test will end, in
+ * milliseconds.
  * @returns {Promise}
  */
 export default function DashJsSimpleLoadVideoDash(
   mediaElement,
-  eventEmitters,
-  mpdUrl
+  metricsStore,
+  mpdUrl,
+  timeout
 ) {
   // TODO ending condition
   return new Promise(async (res) => {
     let hasEnded = false;
     const player = dashjs.MediaPlayer().create();
     window.player = player;
-    const unbind = bindToDashjs(player, mediaElement, eventEmitters);
+    const unbind = bindToDashjs(player, mediaElement, metricsStore);
     player.updateSettings({
       streaming: {
         lowLatencyEnabled: true,
@@ -33,7 +37,7 @@ export default function DashJsSimpleLoadVideoDash(
     });
     player.initialize(mediaElement, mpdUrl, true);
 
-    const timeout = setTimeout(finish, 5_000);
+    const timeoutId = setTimeout(finish, timeout);
     player.on(dashjs.MediaPlayer.events.PLAYBACK_ENDED, finish);
 
     function finish() {
@@ -41,12 +45,13 @@ export default function DashJsSimpleLoadVideoDash(
         return;
       }
       hasEnded = true;
-      clearTimeout(timeout);
+      clearTimeout(timeoutId);
+      unbind();
       player.off(dashjs.MediaPlayer.events.PLAYBACK_ENDED, finish);
       player.destroy();
       delete window.player;
-      unbind();
       res();
     }
   });
 }
+

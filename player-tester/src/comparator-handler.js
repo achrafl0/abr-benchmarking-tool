@@ -32,7 +32,7 @@ for (let chart of chartsElementIds) {
         fileReader.onload = (event) => {
             const { player, data } = JSON.parse(event.target.result)
             document.getElementById(chart.title).textContent = player
-            chart.chart = new Chart(document.getElementById(chart.canvas), data);
+            chart.chart = new Chart(data);
         }
         fileReader.readAsText(files.item(0))
     }

@@ -1,35 +1,53 @@
 import ChartManager from "./chart";
-import DashJsSimpleLoadVideoDash from "./scenarios/dashjs_simple_load_video_dash";
-import RxPlayerSimpleLoadVideoDash from "./scenarios/rx_player_simple_load_video_dash";
-import ShakaSimpleLoadVideoDash from "./scenarios/shaka_simple_load_video_dash";
-import { LOCAL_MPD_URL } from "./consts";
+import { CDN_SERVER_URL } from "./consts";
+import MetricsStore from "./metrics_store";
+import DashJsSimpleLoadVideoDash from "./scenarios/dashjs/low_latency";
+import RxPlayerSimpleLoadVideoDash from "./scenarios/rx-player/low_latency";
+import ShakaSimpleLoadVideoDash from "./scenarios/shaka/low_latency";
+
+const LOW_LATENCY_MPD_URL =
+  "http://localhost:5001/proxy/https://cmafref.akamaized.net/cmaf/live-ull/2006350/akambr/out.mpd";
 
 const videoElement = document.getElementById("video");
 
 async function run() {
-  const chart1 = new ChartManager();
-  const eventEmitters1 = chart1.getEventEmitters();
-  document.getElementById("chart-container").appendChild(chart1.canvas);
-  document.getElementById("player").textContent = "Player used: Shaka Player";
-  await ShakaSimpleLoadVideoDash(videoElement, eventEmitters1, LOCAL_MPD_URL);
-  chart1.stopUpdating();
-  chart1.export();
+  const date = new Date().toISOString();
+  const tests = [
+    ["Low Latency - RxPlayer", RxPlayerSimpleLoadVideoDash],
+    ["Low Latency - ShakaPlayer", ShakaSimpleLoadVideoDash],
+    ["Low Latency - Dashjs", DashJsSimpleLoadVideoDash],
+  ];
 
-  const chart2 = new ChartManager();
-  const eventEmitters2 = chart2.getEventEmitters();
-  document.getElementById("chart-container").appendChild(chart2.canvas);
-  document.getElementById("player").textContent = "Player used: RxPlayer";
-  await RxPlayerSimpleLoadVideoDash(videoElement, eventEmitters2, LOCAL_MPD_URL);
-  chart2.stopUpdating();
-  chart2.export();
+  const chartContainerElt = document.getElementById("chart-container");
+  const currentTestNameElt = document.getElementById("test-name");
 
-  const chart3 = new ChartManager();
-  const eventEmitters3 = chart3.getEventEmitters();
-  document.getElementById("chart-container").appendChild(chart3.canvas);
-  document.getElementById("player").textContent = "Player used: DashJS L2ALL";
-  await DashJsSimpleLoadVideoDash(videoElement, eventEmitters3, LOCAL_MPD_URL);
-  chart3.stopUpdating();
-  chart3.export();
+  for (const test of tests) {
+    const [testName, playerFn] = test;
+    const metricsStore = new MetricsStore();
+    const chart = new ChartManager(metricsStore, true);
+
+    const h3ChartElt = document.createElement("h3");
+    h3ChartElt.innerText = testName;
+    chartContainerElt.appendChild(h3ChartElt);
+    chartContainerElt.appendChild(chart.canvas);
+    currentTestNameElt.innerText = testName;
+    await playerFn(videoElement, metricsStore, LOW_LATENCY_MPD_URL, 10_000);
+
+    chart.stopUpdating();
+    const chartData = metricsStore.exportData();
+    const reportBody = {
+      name: testName,
+      directory: date,
+      chartData,
+    };
+    fetch(CDN_SERVER_URL+ "/report", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(reportBody),
+    });
+  }
 }
 
 run();

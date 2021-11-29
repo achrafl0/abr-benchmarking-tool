@@ -1,20 +1,23 @@
 import shaka from "shaka-player";
-import bindToShaka from "../binders/shaka";
+import bindToShaka from "../../binders/shaka";
 // import { updateToxics } from "../utils";
 
 /**
- * Scenario to launch a simple DASH content with autoPlay until its end (or an
- * error) through DASH.js.
+ * Scenario to launch a simple DASH content with autoPlay until a timeout,
+ * its end (or an error) through the shaka-player.
  * @param {HTMLMediaElement} mediaElement - The media element on which the
  * content will play.
- * @param {Object} eventEmitters
+ * @param {Object} metricsStore
  * @param {string} mpdUrl - URL to the DASH MPD that you want to play.
+ * @param {number} timeout - Timeout after which the test will end, in
+ * milliseconds.
  * @returns {Promise}
  */
 export default function ShakaSimpleLoadVideoDash(
   mediaElement,
-  eventEmitters,
-  mpdUrl
+  metricsStore,
+  mpdUrl,
+  timeout
 ) {
   return new Promise(async (res) => {
     let hasEnded = false;
@@ -22,13 +25,8 @@ export default function ShakaSimpleLoadVideoDash(
     //await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
     shaka.polyfill.installAll();
     const player = new shaka.Player(mediaElement);
-    player.configure({
-      streaming: {
-        lowLatencyMode: true,
-      },
-    });
     window.player = player;
-    const unbind = bindToShaka(player, mediaElement, eventEmitters);
+    const unbind = bindToShaka(player, mediaElement, metricsStore);
 
     player
       .load(mpdUrl)
@@ -39,18 +37,19 @@ export default function ShakaSimpleLoadVideoDash(
         console.error(err);
       });
 
-    const timeout = setTimeout(finish, 5_000);
+    const timeoutId = setTimeout(finish, timeout);
 
     function finish() {
       if (hasEnded) {
         return;
       }
       hasEnded = true;
-      clearTimeout(timeout);
+      clearTimeout(timeoutId);
+      unbind();
       player.destroy();
       delete window.player;
-      unbind();
       res();
     }
   });
 }
+
