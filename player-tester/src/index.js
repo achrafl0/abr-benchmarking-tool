@@ -36,9 +36,9 @@ async function run() {
     chart.stopUpdating();
     const chartData = metricsStore.exportData();
     const reportBody = {
-      name: testName,
+      name: testName + ".json",
       directory: date,
-      chartData,
+      data: chartData,
     };
     fetch(CDN_SERVER_URL+ "/report", {
       method: "POST",
