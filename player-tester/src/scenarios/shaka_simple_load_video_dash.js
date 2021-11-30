@@ -17,7 +17,8 @@ export default function ShakaSimpleLoadVideoDash(mediaElement, mpdUrl) {
 
     //await updateToxics({ rate: 1000 }, { jitter: 50, latency: 50 });
     document.getElementById("player").textContent = "Player used: Shaka Player";
-    console.warn("mediaElement");
+    shaka.polyfill.installAll();
+    mediaElement.muted = true // allow autoPlay
     const player = new shaka.Player(mediaElement);
     player.configure({
       streaming: {
@@ -29,11 +30,11 @@ export default function ShakaSimpleLoadVideoDash(mediaElement, mpdUrl) {
 
     player
       .load(mpdUrl)
-      .then((res) => {
-        console.warn(res);
+      .then(() => {
+        mediaElement.play();
       })
       .catch((err) => {
-        console.warn(err);
+        console.error(err);
       });
 
     const timeout = setTimeout(finish, 40_000);
