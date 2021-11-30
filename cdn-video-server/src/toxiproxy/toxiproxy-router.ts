@@ -1,24 +1,38 @@
 import { Router } from "express";
-import { IToxic } from "./toxiproxyTypes";
+import { IApiToxic } from "./toxiproxyTypes";
 import Toxiproxy from "./utils";
 
 const router = Router();
 
 router.post("/toxics", (req, res) => {
-  const toxics: IToxic[] = req.body;
+  const toxics: IApiToxic[] = req.body;
   if (!Array.isArray(toxics)) {
-    // TODO better return?
-    res.status(500);
+    res.status(500).json({
+      success: false,
+      error: "Toxics should be in an array.",
+    });
   }
   Toxiproxy.updateToxics(toxics)
-    .then(() => res.status(200))
-    .catch(() => res.status(500));
+    .then(() => res.status(200).json({ success: true }))
+    .catch((err) => {
+      const message = err?.message ?? "Unknown update error";
+      res.status(500).json({
+        success: false,
+        error: message,
+      });
+    });
 });
 
 router.delete("/toxics", (_req, res) => {
   Toxiproxy.removeCurrentToxics()
-    .then(() => res.status(200))
-    .catch(() => res.status(500));
+    .then(() => res.status(200).json({ success: true }))
+    .catch((err) => {
+      const message = err?.message ?? "Unknown update error";
+      res.status(500).json({
+        success: false,
+        error: message,
+      });
+    });
 });
 
 export default router;

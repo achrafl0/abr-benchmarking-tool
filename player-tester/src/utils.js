@@ -19,18 +19,37 @@ export function computeBufferSize(mediaElement) {
   }
 }
 
+export function resetToxics() {
+  return fetch("http://127.0.0.1:5001/toxics", { method: "DELETE" });
+}
+
 export function updateToxics(
   bandwidthConfig,
   latencyConfig
 ) {
+  const toxicsSent = [];
+  if (bandwidthConfig !== undefined && bandwidthConfig !== null) {
+    toxicsSent.push({
+      type: "bandwidth",
+      toxicity: bandwidthConfig.toxicity,
+      attributes: { rate: bandwidthConfig.rate },
+    });
+  }
+  if (latencyConfig !== undefined && latencyConfig !== null) {
+    toxicsSent.push({
+      type: "latency",
+      toxicity: latencyConfig.toxicity,
+      attributes: {
+        latency: latencyConfig.latency,
+        jitter: latencyConfig.jitter,
+      },
+    });
+  }
   return fetch("http://127.0.0.1:5001/toxics", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      bandwidth: bandwidthConfig,
-      latency: latencyConfig,
-    }),
+    body: JSON.stringify(toxicsSent),
   });
 }

@@ -15,70 +15,73 @@ export enum ToxicType {
     LIMIT_DATA = "limit_data",
 }
 
-interface IAbstractToxic {
-    name: string;
-    type: ToxicType;
-    stream?: "upstream" | "downstream";
-    toxicity?: number;
-    attributes: unknown
+/** Generic type for Toxics as sent to the HTTP API. */
+interface IGenericApiToxic<T extends ToxicType, U> {
+  type: T;
+  stream?: "upstream" | "downstream";
+  toxicity?: number;
+  attributes: U;
 }
 
-export interface ILatencyToxic extends IAbstractToxic {
-    type: ToxicType.LATENCY;
-    attributes: {
-        latency?: number;
-        jitter?: number;
-    }
+/** Generic type for toxic communicated to toxiproxy. */
+interface IGenericNormalizedToxic<T extends ToxicType, U> {
+  name: string;
+  type: T;
+  stream?: "upstream" | "downstream";
+  toxicity?: number;
+  attributes: U;
 }
 
-export interface IBandwidthToxic extends IAbstractToxic {
-    type: ToxicType.BANDWIDTH;
-    attributes: {
-        rate?: number;
-    }
+/** Attributes configuring a latency-related toxic. */
+interface ILatencyToxicAttributes {
+  latency?: number;
+  jitter?: number;
 }
 
-export interface ISlowCloseToxic extends IAbstractToxic {
-    type: ToxicType.SLOW_CLOSE;
-    attributes: {
-        delay?: number;
-    }
+/** Attributes configuring a bandwidth-related toxic. */
+interface IBandwidthToxicAttributes {
+  rate?: number;
 }
 
-export interface ITimeoutToxic extends IAbstractToxic {
-    type: ToxicType.TIMEOUT;
-    attributes: {
-        timeout?: number;
-    }
+/** Attributes configuring a slow-close toxic. */
+interface ISlowCloseToxicAttributes {
+  rate?: number;
 }
 
-export interface IResetPeerToxic extends IAbstractToxic {
-    type: ToxicType.RESET_PEER;
-    attributes: {
-        timeout?: number;
-    }
+/** Attributes configuring a timeout toxic. */
+interface ITimeoutToxicAttributes {
+  timeout?: number;
 }
 
-export interface ISlicerToxic extends IAbstractToxic {
-    type: ToxicType.SLICER;
-    attributes: {
-        averageSize?: number;
-        sizeVariation?: number;
-        delay?: number;
-    }
-}
+/** Object configuring a latency toxic communicated to toxiproxy. */
+export type INormalizedLatencyToxic = IGenericNormalizedToxic<
+  ToxicType.LATENCY,
+  ILatencyToxicAttributes
+>;
 
-export interface ILimitDataToxic extends IAbstractToxic {
-    type: ToxicType.LIMIT_DATA;
-    attributes: {
-        bytes?: number;
-    }
-}
+/** Object configuring a bandwidth toxic communicated to toxiproxy. */
+export type INormalizedBandwidthToxic = IGenericNormalizedToxic<
+  ToxicType.BANDWIDTH,
+  IBandwidthToxicAttributes
+>;
 
-export type IToxic = ILatencyToxic |
-  IBandwidthToxic |
-  IResetPeerToxic |
-  ISlicerToxic |
-  ITimeoutToxic |
-  ILimitDataToxic |
-  ISlowCloseToxic
+/** Object configuring a slow-close toxic communicated to toxiproxy. */
+export type INormalizedSlowCloseToxic = IGenericNormalizedToxic<
+  ToxicType.SLOW_CLOSE,
+  ISlowCloseToxicAttributes
+>;
+
+/** Object configuring a timeout toxic communicated to toxiproxy. */
+export type INormalizedTimeoutToxic = IGenericNormalizedToxic<
+  ToxicType.TIMEOUT,
+  ITimeoutToxicAttributes
+>;
+
+// TODO? Other toxics
+
+export type INormalizedToxic = INormalizedLatencyToxic |
+  INormalizedBandwidthToxic |
+  INormalizedTimeoutToxic |
+  INormalizedSlowCloseToxic
+
+export type IApiToxic = IGenericApiToxic<ToxicType, unknown>;

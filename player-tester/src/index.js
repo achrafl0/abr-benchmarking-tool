@@ -4,6 +4,7 @@ import MetricsStore from "./metrics_store";
 import DashJsSimpleLoadVideoDash from "./scenarios/dashjs/low_latency";
 import RxPlayerSimpleLoadVideoDash from "./scenarios/rx-player/low_latency";
 import ShakaSimpleLoadVideoDash from "./scenarios/shaka/low_latency";
+import { resetToxics, updateToxics } from "./utils";
 
 const LOW_LATENCY_MPD_URL =
   "http://localhost:5001/proxy/https://cmafref.akamaized.net/cmaf/live-ull/2006350/akambr/out.mpd";
@@ -11,6 +12,7 @@ const LOW_LATENCY_MPD_URL =
 const videoElement = document.getElementById("video");
 
 async function run() {
+  await resetToxics();
   const date = new Date().toISOString();
   const tests = [
     ["Low Latency - RxPlayer", RxPlayerSimpleLoadVideoDash],
@@ -20,6 +22,8 @@ async function run() {
 
   const chartContainerElt = document.getElementById("chart-container");
   const currentTestNameElt = document.getElementById("test-name");
+
+  await updateToxics({ rate: 1000 }, null);
 
   for (const test of tests) {
     const [testName, playerFn] = test;
@@ -31,7 +35,7 @@ async function run() {
     chartContainerElt.appendChild(h3ChartElt);
     chartContainerElt.appendChild(chart.canvas);
     currentTestNameElt.innerText = testName;
-    await playerFn(videoElement, metricsStore, LOW_LATENCY_MPD_URL, 10_000);
+    await playerFn(videoElement, metricsStore, LOW_LATENCY_MPD_URL, 60_000);
 
     chart.stopUpdating();
     const chartData = metricsStore.exportData();
@@ -48,6 +52,7 @@ async function run() {
       body: JSON.stringify(reportBody),
     });
   }
+  await resetToxics();
 }
 
 run();
