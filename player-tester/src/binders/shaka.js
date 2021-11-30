@@ -1,4 +1,4 @@
-import { computeBufferSize } from "../utils";
+import { computeBufferSize, emitBufferingEvents } from "../utils";
 
 /**
  * Bind the player-tester to ShakaPlayer events
@@ -9,6 +9,7 @@ import { computeBufferSize } from "../utils";
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
 export default function bindToShaka(_player, videoElement, metricsStore) {
+  const stopEmittingBuffering = emitBufferingEvents(videoElement, metricsStore);
   updatePlaybackRate();
   videoElement.addEventListener("ratechange", updatePlaybackRate);
 
@@ -25,6 +26,8 @@ export default function bindToShaka(_player, videoElement, metricsStore) {
   }
 
   return () => {
+    stopEmittingBuffering();
+
     // send for the last time exceptional events (to have a continuous chart)
     updatePlaybackRate();
 

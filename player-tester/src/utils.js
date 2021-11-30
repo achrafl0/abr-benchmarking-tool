@@ -53,3 +53,72 @@ export function updateToxics(
     body: JSON.stringify(toxicsSent),
   });
 }
+
+/**
+ * @param {HTMLMediaElement} mediaElement
+ * @param {Object} metricsStore
+ * @returns {Function}
+ */
+export function emitBufferingEvents(
+  mediaElement,
+  metricsStore
+) {
+  let wasBuffering = false;
+
+  mediaElement.addEventListener("loadeddata", onBufferingRelatedEvent);
+  mediaElement.addEventListener("loadedmetadata", onBufferingRelatedEvent);
+  mediaElement.addEventListener("canplay", onBufferingRelatedEvent);
+  mediaElement.addEventListener("canplaythrough", onBufferingRelatedEvent);
+  mediaElement.addEventListener("waiting", onBufferingRelatedEvent);
+  mediaElement.addEventListener("suspend", onBufferingRelatedEvent);
+  mediaElement.addEventListener("emptied", onBufferingRelatedEvent);
+  mediaElement.addEventListener("stalled", onBufferingRelatedEvent);
+  mediaElement.addEventListener("ratechange", onBufferingRelatedEvent);
+  mediaElement.addEventListener("pause", onBufferingRelatedEvent);
+  mediaElement.addEventListener("play", onBufferingRelatedEvent);
+  mediaElement.addEventListener("playing", onBufferingRelatedEvent);
+  mediaElement.addEventListener("seeking", onBufferingRelatedEvent);
+  mediaElement.addEventListener("seeked", onBufferingRelatedEvent);
+  onBufferingRelatedEvent();
+
+  function onBufferingRelatedEvent() {
+    if (!wasBuffering) {
+      if (
+        mediaElement.readyState < 3 ||
+        mediaElement.playbackRate === 0 ||
+        mediaElement.seeking ||
+        mediaElement.paused
+      ) {
+        metricsStore.registerEvent("buffering", true);
+        wasBuffering = true;
+      }
+    } else {
+      if (
+        mediaElement.readyState > 3 &&
+        mediaElement.playbackRate !== 0 &&
+        !mediaElement.seeking &&
+        !mediaElement.paused
+      ) {
+        metricsStore.registerEvent("buffering", false);
+        wasBuffering = false;
+      }
+    }
+  }
+
+  return () => {
+    mediaElement.removeEventListener("loadeddata", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("loadedmetadata", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("canplay", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("canplaythrough", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("waiting", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("suspend", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("emptied", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("stalled", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("ratechange", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("pause", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("play", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("playing", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("seeking", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("seeked", onBufferingRelatedEvent);
+  };
+}

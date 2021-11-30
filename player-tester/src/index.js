@@ -23,7 +23,7 @@ async function run() {
   const chartContainerElt = document.getElementById("chart-container");
   const currentTestNameElt = document.getElementById("test-name");
 
-  await updateToxics({ rate: 1000 }, null);
+  await updateToxics({ rate: 4_000 }, null);
 
   for (const test of tests) {
     const [testName, playerFn] = test;
@@ -35,10 +35,11 @@ async function run() {
     chartContainerElt.appendChild(h3ChartElt);
     chartContainerElt.appendChild(chart.canvas);
     currentTestNameElt.innerText = testName;
-    await playerFn(videoElement, metricsStore, LOW_LATENCY_MPD_URL, 60_000);
+    await playerFn(videoElement, metricsStore, LOW_LATENCY_MPD_URL, 10_000);
 
     chart.stopUpdating();
     const chartData = metricsStore.exportData();
+    console.warn(testName, chartData);
     const reportBody = {
       name: testName + ".json",
       directory: date,

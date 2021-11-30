@@ -1,4 +1,4 @@
-import { computeBufferSize } from "../utils";
+import { computeBufferSize, emitBufferingEvents } from "../utils";
 
 /**
  * Bind the player-tester to RxPlayer events
@@ -9,6 +9,7 @@ import { computeBufferSize } from "../utils";
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
 export default function bindToRxPlayer(player, videoElement, metricsStore) {
+  const stopEmittingBuffering = emitBufferingEvents(videoElement, metricsStore);
   player.addEventListener("audioBitrateChange", onAudioBitrateChange);
   player.addEventListener("videoBitrateChange", onVideoBitrateChange);
   let lastAudioBitrate;
@@ -40,6 +41,8 @@ export default function bindToRxPlayer(player, videoElement, metricsStore) {
   }
 
   return () => {
+    stopEmittingBuffering();
+
     // send for the last time exceptional events (to have a continuous chart)
     if (lastAudioBitrate !== undefined) {
       metricsStore.registerEvent("audioBitrate", lastAudioBitrate);

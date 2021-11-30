@@ -6,6 +6,7 @@ export default class MetricsStore {
   bufferSizes;
   videoBitrates;
   playbackRates;
+  bufferingStates;
 
   constructor() {
     this.reset();
@@ -18,6 +19,7 @@ export default class MetricsStore {
     this.bufferSizes = [];
     this.videoBitrates = [];
     this.playbackRates = [];
+    this.bufferingStates = [];
   }
 
   addUpdateListener(eventType, fn) {
@@ -63,6 +65,10 @@ export default class MetricsStore {
         this.playbackRates.push([time, eventData]);
       break;
 
+      case "buffering":
+        this.bufferingStates.push([time, eventData]);
+      break;
+
       default:
         throw new Error("Unknown metric: " + eventType);
     }
@@ -75,6 +81,7 @@ export default class MetricsStore {
       bufferSizes: this.bufferSizes,
       playbackRates: this.playbackRates,
       videoBitrates: this.videoBitrates,
+      bufferingStates: this.bufferingStates,
     };
   }
 

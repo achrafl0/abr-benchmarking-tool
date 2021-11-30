@@ -1,5 +1,5 @@
 import dashjs from "dashjs";
-import { computeBufferSize } from "../utils";
+import { computeBufferSize, emitBufferingEvents } from "../utils";
 
 /**
  * Bind the player-tester to DASH.js events
@@ -10,6 +10,7 @@ import { computeBufferSize } from "../utils";
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
 export default function bindToDashjs(player, videoElement, metricsStore) {
+  const stopEmittingBuffering = emitBufferingEvents(videoElement, metricsStore);
   let lastVideoBitrate;
   player.on(
     dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
@@ -38,6 +39,8 @@ export default function bindToDashjs(player, videoElement, metricsStore) {
   }
 
   return () => {
+    stopEmittingBuffering();
+
     // send for the last time exceptional events (to have a continuous chart)
     if (lastVideoBitrate !== undefined) {
       metricsStore.registerEvent("videoBitrate", lastVideoBitrate);
