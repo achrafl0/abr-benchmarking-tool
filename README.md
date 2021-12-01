@@ -21,9 +21,10 @@ For a fast and easy setup, you can just run the `setup.sh` shell script at the
 root of this project.
 
 It will:
-  1. Install the right [Toxiproxy](https://github.com/Shopify/toxiproxy) binary
-     for your system and move it to `./cdn-video-server/toxiproxy-server`
-  2. Install dependencies for every projects in this repository
+  1. Install the right [Toxiproxy](https://github.com/Shopify/toxiproxy)
+     binaries (server and CLI) for your system and move it to
+     `./cdn-video-server/toxiproxy-server`.
+  2. Install dependencies for every projects in this repository.
 
 You can also perform those tasks manually if you prefer.
 
@@ -83,53 +84,82 @@ The following URLs are accessible through this server:
     You can update network conditions by posting JSON through the HTTP `POST`
     on this route.
 
-    Here is a full example of how you can configure Toxiproxy:
+    Here is a full example of a JSON that can be posted to `/toxics`.
     ```js
-    {
-      // Optional bandwidth configuration.
-      // No bandwidth restriction will be applied if this key is not present.
-      "bandwidth": {
-        // The bandwidth wanted, in kilobits per seconds.
-        rate: 1000,
+    // Array containing each "toxic"
+    [
+      // Object defining a single toxic
+      {
+        // The "type" of toxic. For now can be either "bandwidth" or "latency"
+        type: "bandwidth",
+
+        // Whether it affects the upload direction (`"upstream"`) or the
+        // download direction (`"downstream"`).
+        // Set to `"downstream"` if not defined.
+        stream: "downstream",
 
         // The "toxicity", which is a number between 0 and 1 indicating the
-        // chance that this bandwidth configuration is applied.
+        // chance that this toxic configuration is applied.
         //
-        // This is totally optional and set to `1` by default (meaning the
-        // configuration is always applied).
-        // You usually don't want to modify this value.
-        toxicity: 1
+        // This is totally optional and set to `1` (meaning the configuration is
+        // always applied) by default.
+        toxicity: 1,
+
+        // Attributes linked to this toxic's type (in this case, "bandwidth")
+        attributes: {
+          // The bandwidth wanted, in kilobits per seconds.
+          rate: 1000,
+        },
       },
 
-      // Optional latency configuration.
-      // No bandwidth restriction will be applied if this key is not present.
-      "latency": {
-        // The network latency, in milliseconds
-        latency: 300,
+      // Let's also define a "latency" toxic
+      {
+        type: "latency",
+        stream: "downstream",
+        toxicity: 1,
+        attributes: {
+          // The network latency, in milliseconds
+          latency: 300,
 
-        // Delta applied randomly to the latency to produce the actual latency.
-        // In this way, the actual latency is equal to `latency +/- jitter`.
-        jitter: 100,
+          // Delta applied randomly to the latency to produce the actual latency.
+          // In this way, the actual latency is equal to `latency +/- jitter`.
+          jitter: 100,
+        }
+      }
+    ]
+    ```
 
-        // The "toxicity", which is a number between 0 and 1 indicating the
-        // chance that this latency configuration is applied.
-        //
-        // This is totally optional and set to `1` by default (meaning the
-        // configuration is always applied).
-        // You usually don't want to modify this value.
-        toxicity: 1
+  - `/report`: allows to export a report of metrics and save it.
+    The point is to be able to later retrieve a test's output for analysis in
+    the client.
+
+    You should perform a POST request on that route with a JSON taking the
+    following format:
+
+    ```js
+    {
+      // The directory the tests will be in.
+      // The path can be of any depth, as long as it doesn't go through parent
+      // directories.
+      directory: "my-reports/current-tests",
+
+      // The filename of the corresponding test.
+      name: "test-A.json
+
+      // The report data in the format preferred by the client
+      data: {
+        //...
       }
     }
     ```
-
-  - `/bandwidth` allows to fetch the current network conditions applied.
-    The format is the same one than what is posted to `/toxics`.
 
 ### The client
 
 The client is written in the usual HTTP/CSS/JavaScript combo an is in the
 `./player-tester` directory.
-It can be run by going into the directory and calling `npm run build`.
+It can be run through the `./start_client.sh` script.
 
-It's role is to run "scenarios" (written in `./player-tester/src/scenarios`)
-while monitoring multiple playback metrics to then display a chart of a player's
+It's role is to run tests "scenarios" and collect various metrics while doing
+so, that should be displayed in a chart.
+It can also be used to export those metrics for later analysis (by using the
+server's features).
