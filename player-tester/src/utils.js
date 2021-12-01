@@ -19,83 +19,106 @@ export function computeBufferSize(mediaElement) {
   }
 }
 
+export function resetToxics() {
+  return fetch("http://127.0.0.1:5001/toxics", { method: "DELETE" });
+}
+
 export function updateToxics(
   bandwidthConfig,
   latencyConfig
 ) {
+  const toxicsSent = [];
+  if (bandwidthConfig !== undefined && bandwidthConfig !== null) {
+    toxicsSent.push({
+      type: "bandwidth",
+      toxicity: bandwidthConfig.toxicity,
+      attributes: { rate: bandwidthConfig.rate },
+    });
+  }
+  if (latencyConfig !== undefined && latencyConfig !== null) {
+    toxicsSent.push({
+      type: "latency",
+      toxicity: latencyConfig.toxicity,
+      attributes: {
+        latency: latencyConfig.latency,
+        jitter: latencyConfig.jitter,
+      },
+    });
+  }
   return fetch("http://127.0.0.1:5001/toxics", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      bandwidth: bandwidthConfig,
-      latency: latencyConfig,
-    }),
+    body: JSON.stringify(toxicsSent),
   });
 }
 
-const CURRENT_TIME_INTERVAL = 200;
-
 /**
- * Report the evolution of the currentTime:
- *   - `0`: The new currentTime is before the previous one
- *   - `1`: The new currentTime is the same than the previous one
- *   - `2`: The new currentTime is too soon for regular playback
- *   - `3`: The new currentTime is around what it should be under regular
- *          playback.
- *   - `4`: The new currentTime is too late for regular playback
- *
- * Note that the evolution of the current might be linked to a playbackRate
- * change or even a seek.
- * TODO better handle those cases?
- * @param {Object} registerEvent
  * @param {HTMLMediaElement} mediaElement
- * @returns {Function} - Function allowing to stop registering the currentTime.
+ * @param {Object} metricsStore
+ * @returns {Function}
  */
-export function currentTimeListener(registerEvent, mediaElement) {
-  let lastCurrentTimeMeasure = null;
-  const currentTimeId = setInterval(onCurrentTimeChange, CURRENT_TIME_INTERVAL);
-  onCurrentTimeChange();
+export function emitBufferingEvents(
+  mediaElement,
+  metricsStore
+) {
+  let wasBuffering = false;
 
-  return () => {
-    clearInterval(currentTimeId);
-  };
+  mediaElement.addEventListener("loadeddata", onBufferingRelatedEvent);
+  mediaElement.addEventListener("loadedmetadata", onBufferingRelatedEvent);
+  mediaElement.addEventListener("canplay", onBufferingRelatedEvent);
+  mediaElement.addEventListener("canplaythrough", onBufferingRelatedEvent);
+  mediaElement.addEventListener("waiting", onBufferingRelatedEvent);
+  mediaElement.addEventListener("suspend", onBufferingRelatedEvent);
+  mediaElement.addEventListener("emptied", onBufferingRelatedEvent);
+  mediaElement.addEventListener("stalled", onBufferingRelatedEvent);
+  mediaElement.addEventListener("ratechange", onBufferingRelatedEvent);
+  mediaElement.addEventListener("pause", onBufferingRelatedEvent);
+  mediaElement.addEventListener("play", onBufferingRelatedEvent);
+  mediaElement.addEventListener("playing", onBufferingRelatedEvent);
+  mediaElement.addEventListener("seeking", onBufferingRelatedEvent);
+  mediaElement.addEventListener("seeked", onBufferingRelatedEvent);
+  onBufferingRelatedEvent();
 
-  function onCurrentTimeChange() {
-    const newMeasure = {
-      value: mediaElement.currentTime * 1000,
-      timestamp: performance.now(),
-    };
-    if (lastCurrentTimeMeasure === null) {
-      lastCurrentTimeMeasure = newMeasure;
-      return;
-    }
-
-    const timeDiff = newMeasure.value - lastCurrentTimeMeasure.value;
-    const currentItv = newMeasure.timestamp - lastCurrentTimeMeasure.timestamp;
-    lastCurrentTimeMeasure = newMeasure;
-    if (timeDiff === 0) {
-      // We didn't play
-      registerEvent.currentTime(1);
-      return ;
-    }
-    if (timeDiff < 0) {
-      // We played in reverse
-      registerEvent.currentTime(0);
-      return ;
-    }
-    const relativeDelta = Math.abs(timeDiff - currentItv);
-    console.warn(timeDiff, currentItv, relativeDelta);
-    if (relativeDelta < currentItv * 0.1) {
-      // We played close to normally
-      registerEvent.currentTime(3);
-    } else if (timeDiff - currentItv < 0) {
-      // We played too slow
-      registerEvent.currentTime(2);
+  function onBufferingRelatedEvent() {
+    if (!wasBuffering) {
+      if (
+        mediaElement.readyState < 3 ||
+        mediaElement.playbackRate === 0 ||
+        mediaElement.seeking ||
+        mediaElement.paused
+      ) {
+        metricsStore.registerEvent("buffering", true);
+        wasBuffering = true;
+      }
     } else {
-      // We played too fast
-      registerEvent.currentTime(4);
+      if (
+        mediaElement.readyState > 3 &&
+        mediaElement.playbackRate !== 0 &&
+        !mediaElement.seeking &&
+        !mediaElement.paused
+      ) {
+        metricsStore.registerEvent("buffering", false);
+        wasBuffering = false;
+      }
     }
   }
+
+  return () => {
+    mediaElement.removeEventListener("loadeddata", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("loadedmetadata", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("canplay", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("canplaythrough", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("waiting", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("suspend", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("emptied", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("stalled", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("ratechange", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("pause", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("play", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("playing", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("seeking", onBufferingRelatedEvent);
+    mediaElement.removeEventListener("seeked", onBufferingRelatedEvent);
+  };
 }

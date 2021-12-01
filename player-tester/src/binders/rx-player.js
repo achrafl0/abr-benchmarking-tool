@@ -1,80 +1,60 @@
-import { getBandwidth } from "../network";
-import { registerEvent } from "../chart";
-import { computeBufferSize, currentTimeListener } from "../utils";
-
+import { computeBufferSize, emitBufferingEvents } from "../utils";
 
 /**
  * Bind the player-tester to RxPlayer events
  * @param {Object} player - The RxPlayer instance
  * @param {HTMLMediaElement} mediaElement - The media element on which the
  * content plays.
+ * @param {Object} metricsStore
  * @returns {Function} - returns a function to unsubscribe to binded events.
  */
-export default function bindToRxPlayer(player, videoElement) {
-  let videoBitrateItv;
-  let audioBitrateItv;
+export default function bindToRxPlayer(player, videoElement, metricsStore) {
+  const stopEmittingBuffering = emitBufferingEvents(videoElement, metricsStore);
   player.addEventListener("audioBitrateChange", onAudioBitrateChange);
   player.addEventListener("videoBitrateChange", onVideoBitrateChange);
-  player.addEventListener("playerStateChange", onPlayerStateChange);
+  let lastAudioBitrate;
+  let lastVideoBitrate;
 
-  const stopListeningCurrentTime = currentTimeListener(registerEvent, videoElement);
-  const rateChange = setInterval(onPlaybackRateChange, 1000);
+  updatePlaybackRate();
+  videoElement.addEventListener("ratechange", updatePlaybackRate);
 
-  const bandwidthItv = setInterval(async () => {
-    await getBandwidth();
-  }, 1000);
+  updateBufferSize();
+  const bufferSizeItv = setInterval(updateBufferSize, 100);
 
-  const bufferSizeItv = setInterval(() => {
+  function updateBufferSize() {
     const bufferSize = computeBufferSize(videoElement);
-    registerEvent.bufferSize(bufferSize);
-  }, 100);
+    metricsStore.registerEvent("bufferSize", bufferSize);
+  }
 
-  function onPlaybackRateChange() {
-    registerEvent.playbackRate(videoElement.playbackRate);
+  function updatePlaybackRate() {
+    metricsStore.registerEvent("playbackRate", videoElement.playbackRate);
   }
 
   function onAudioBitrateChange(bitrate) {
-    clearInterval(audioBitrateItv);
-    registerEvent.audioBitrate(bitrate);
-    audioBitrateItv = setInterval(() => {
-      registerEvent.audioBitrate(bitrate);
-    }, 1000);
+    lastAudioBitrate = bitrate;
+    metricsStore.registerEvent("audioBitrate", bitrate);
   }
 
   function onVideoBitrateChange(bitrate) {
-    clearInterval(videoBitrateItv);
-    registerEvent.videoBitrate(bitrate);
-    videoBitrateItv = setInterval(() => {
-      registerEvent.videoBitrate(bitrate);
-    }, 1000);
-  }
-
-  async function onPlayerStateChange(state) {
-    if (state === "LOADED") {
-      await getBandwidth();
-      videoElement.onclick = function () {
-        if (player.getPlayerState() === "PLAYING") {
-          player.pause();
-        } else {
-          player.play();
-        }
-      };
-    } else if (state === "LOADING" || state === "STOPPED") {
-      videoElement.onclick = undefined;
-    }
+    lastVideoBitrate = bitrate;
+    metricsStore.registerEvent("videoBitrate", bitrate);
   }
 
   return () => {
-    clearInterval(currentTimeId);
+    stopEmittingBuffering();
+
+    // send for the last time exceptional events (to have a continuous chart)
+    if (lastAudioBitrate !== undefined) {
+      metricsStore.registerEvent("audioBitrate", lastAudioBitrate);
+    }
+    if (lastVideoBitrate !== undefined) {
+      metricsStore.registerEvent("videoBitrate", lastVideoBitrate);
+    }
+    updatePlaybackRate();
+
     // unbind event listeners
-    stopListeningCurrentTime();
-    clearInterval(audioBitrateItv);
-    clearInterval(videoBitrateItv);
-    clearInterval(liveEdge);
-    clearInterval(rateChange);
-    clearInterval(bandwidthItv);
     clearInterval(bufferSizeItv);
-    player.removeEventListener("playerStateChange", onPlayerStateChange);
+    videoElement.removeEventListener("ratechange", updatePlaybackRate);
     player.removeEventListener("audioBitrateChange", onAudioBitrateChange);
     player.removeEventListener("videoBitrateChange", onVideoBitrateChange);
   };
