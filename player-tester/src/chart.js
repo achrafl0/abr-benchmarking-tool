@@ -41,6 +41,9 @@ export default class ChartManager {
     this.#metrics = metrics;
     if (shouldUpdate) {
       this.startUpdatingChart();
+    } else {
+      this.#updateData();
+      this.#chart.update();
     }
   }
 
